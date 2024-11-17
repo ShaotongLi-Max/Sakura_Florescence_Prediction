@@ -1,0 +1,882 @@
+---
+title: ""
+subtitle: ""
+author: 
+  - Shaotong (Max) Li
+thanks: "Code and data are available at: [Sakura_Florescence_Prediction](https://github.com/ShaotongLi-Max/Sakura_Florescence_Prediction.git)."
+date: today
+date-format: long
+abstract: ""
+format: pdf
+number-sections: true
+toc: true
+bibliography: references.bib
+---
+```{r}
+#| include: false
+#| warning: false
+#| message: false
+#| echo: false
+
+#### Workspace setup ####
+
+# Load libraries
+library(tidyverse)
+library(arrow)
+library(here)
+library(ggplot2)
+library(patchwork)
+library(tidyverse)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggthemes)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# Load cleaned datasets
+sakura_historical_cleaned <- read_csv(here::here("data/03-cleaned_data/sakura-historical-cleaned.csv"))
+sakura_modern_cleaned <- read_csv(here::here("data/03-cleaned_data/sakura-modern-cleaned.csv"))
+# Load temp_test_data for Model 1
+temp_test_data <- read_parquet(here::here("data/02-analysis_data/temp_test_data.parquet"))
+# Load latitude&time_test_data for Model 2
+latitude_time_test_data <- read_parquet(here::here("data/02-analysis_data/latitude&time_test_data.parquet"))
+# Load Model 1
+model1 <- readRDS(here::here("models/model1.rds"))
+# Load Model 2
+model2 <- readRDS(here::here("models/model2.rds"))
+```
+
+# Introduction
+
+# Data
+
+## Overview
+
+## Measurement
+
+## Outcome Variables
+
+### Florescence
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Combine and Prepare Data ####
+# Prepare sakura_historical_cleaned data
+historical_flower_data <- sakura_historical_cleaned %>%
+  select(flower_doy) %>%
+  filter(!is.na(flower_doy)) %>%  # Remove missing values
+  mutate(dataset = "Historical")  # Add label for distinction
+
+# Prepare sakura_modern_cleaned data
+modern_flower_data <- sakura_modern_cleaned %>%
+  select(flower_doy) %>%
+  filter(!is.na(flower_doy)) %>%  # Remove missing values
+  mutate(dataset = "Modern")  # Add label for distinction
+
+# Combine the datasets
+combined_flower_data <- bind_rows(historical_flower_data, modern_flower_data)
+
+#### Plot Flowering Day Distribution ####
+flower_doy_distribution_plot <- combined_flower_data %>%
+  ggplot(aes(x = flower_doy, fill = dataset, color = dataset)) +
+  geom_density(alpha = 0.3, adjust = 1.5) +  # Use density plot for smoother curves
+  labs(
+    title = "Flowering Day Distribution: Historical vs Modern Data",
+    x = "Flowering Day (DOY)",
+    y = "Density",
+    fill = "Dataset",
+    color = "Dataset"
+  ) +
+  scale_fill_manual(values = c("Historical" = "steelblue", "Modern" = "darkorange")) +
+  scale_color_manual(values = c("Historical" = "steelblue", "Modern" = "darkorange")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "right"
+  )
+
+# Display the plot
+print(flower_doy_distribution_plot)
+
+```
+
+## Predictor Variables
+
+### Temperature
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Combine and Prepare Data ####
+# Prepare sakura_historical_cleaned data
+historical_temp_data <- sakura_historical_cleaned %>%
+  select(temp) %>%
+  filter(!is.na(temp)) %>%  # Remove missing values
+  mutate(dataset = "Historical", variable = "temp")  # Add labels for distinction
+
+# Prepare sakura_modern_cleaned data
+modern_temp_data <- sakura_modern_cleaned %>%
+  select(mean_temp_month) %>%
+  filter(!is.na(mean_temp_month)) %>%  # Remove missing values
+  rename(temp = mean_temp_month) %>%  # Rename column to match for combining
+  mutate(dataset = "Modern", variable = "mean_temp_month")  # Add labels for distinction
+
+# Combine the datasets
+combined_temp_data <- bind_rows(historical_temp_data, modern_temp_data)
+
+#### Plot Temperature Distribution ####
+temp_distribution_plot <- combined_temp_data %>%
+  ggplot(aes(x = temp, fill = dataset, color = dataset)) +
+  geom_density(alpha = 0.3, adjust = 1.5) +  # Use density plot for smoother curves
+  labs(
+    title = "Temperature Distribution: Historical vs Modern Data",
+    x = "Temperature (°C)",
+    y = "Density",
+    fill = "Dataset",
+    color = "Dataset"
+  ) +
+  scale_fill_manual(values = c("Historical" = "steelblue", "Modern" = "darkorange")) +
+  scale_color_manual(values = c("Historical" = "steelblue", "Modern" = "darkorange")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "right"
+  )
+
+# Display the plot
+print(temp_distribution_plot)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Prepare Data ####
+# sakura_historical is already loaded
+scatter_data <- sakura_historical_cleaned %>%
+  filter(!is.na(temp), !is.na(flower_doy))  # Ensure no missing values
+
+#### Create Scatter Plot ####
+scatter_plot_no_line <- ggplot(scatter_data, aes(x = temp, y = flower_doy)) +
+  geom_point(aes(color = year), alpha = 0.6, size = 2) +  # Scatter points colored by year
+  scale_color_viridis_c(option = "C", name = "Year") +  # Color scale for year
+  labs(
+    title = "Relationship Between Temperature and Flowering Day",
+    subtitle = "Color represents temporal progression",
+    x = "Temperature (°C)",
+    y = "Flowering Day (DOY)"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
+# Display the plot
+print(scatter_plot_no_line)
+
+```
+
+### Latitude
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Improved Plot Latitude and Longitude Distributions ####
+
+# Plot latitude distribution with bins
+latitude_plot <- ggplot(sakura_modern_cleaned, aes(x = latitude)) +
+  geom_histogram(
+    bins = 20,                    # Adjust the number of bins for better grouping
+    fill = "steelblue", 
+    alpha = 0.8
+  ) +
+  labs(
+    title = "Latitude Distribution",
+    x = "Latitude",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+latitude_plot
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Prepare Latitude Data ####
+latitude_temp_data <- sakura_modern_cleaned %>%
+  filter(!is.na(latitude), !is.na(mean_temp_month)) %>%
+  group_by(latitude) %>%
+  summarise(mean_temp = mean(mean_temp_month, na.rm = TRUE)) %>%
+  ungroup()
+
+#### Fit a Linear Model ####
+linear_model <- lm(mean_temp ~ latitude, data = latitude_temp_data)
+
+#### Create Plot ####
+latitude_temp_plot <- ggplot(latitude_temp_data, aes(x = latitude, y = mean_temp)) +
+  geom_line(color = "steelblue", size = 1) +  # Line graph with custom color and size
+  geom_abline(
+    slope = coef(linear_model)["latitude"],
+    intercept = coef(linear_model)["(Intercept)"],
+    color = "darkorange",
+    linetype = "dashed",
+    size = 1
+  ) +  # Add a dashed line for the linear relationship
+  labs(
+    title = "Mean Temperature by Latitude",
+    subtitle = "Relationship between Latitude and Mean Temperature with Linear Trend",
+    x = "Latitude",
+    y = "Mean Temperature (°C)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
+# Display the plot
+print(latitude_temp_plot)
+
+
+```
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Load and Prepare Data ####
+# Calculate mean temperature for each location
+temperature_summary <- sakura_modern_cleaned %>%
+  group_by(latitude, longitude) %>%
+  summarise(mean_temp_month = mean(mean_temp_month, na.rm = TRUE)) %>%
+  ungroup()
+
+#### Load Japan's Basemap ####
+japan_map <- ne_countries(scale = "medium", country = "Japan", returnclass = "sf")
+
+#### Create the Map for Temperature ####
+gis_plot_temp <- ggplot(data = japan_map) +
+  geom_sf(fill = "white", color = "black") +  # Base map of Japan
+  geom_point(
+    data = temperature_summary,
+    aes(x = longitude, y = latitude, color = mean_temp_month),
+    size = 3, alpha = 0.7
+  ) +
+  scale_color_gradientn(
+    colors = c("#2c7bb6", "#abd9e9", "#ffffbf", "#fdae61", "#d7191c"),  # Blue to red gradient
+    name = "Mean Temperature (°C)"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Average Monthly Temperatures Across Japan",
+    subtitle = "Warmer colors indicate higher temperatures",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme(legend.position = "right")
+
+# Display the plot
+print(gis_plot_temp)
+
+```
+
+### Time of Blossom
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Plot Monthly Distribution of Flower Date ####
+
+# Extract the month from flower_date and create a summary table
+flower_month_distribution <- sakura_modern_cleaned %>%
+  mutate(month = month(flower_date, label = TRUE, abbr = TRUE)) %>%  # Extract abbreviated month names
+  count(month)  # Count the occurrences for each month
+
+# Plot the monthly distribution
+flower_month_plot <- ggplot(flower_month_distribution, aes(x = month, y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.8) +  # Use steelblue for the bars
+  labs(
+    title = "Monthly Distribution of Flower Date",
+    x = "Month",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+# Display the plot
+flower_month_plot
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Plot Distribution of Flower Dates by Month and Day ####
+
+# Extract month and day from flower_date
+flower_date_distribution <- sakura_modern_cleaned %>%
+  mutate(month = month(flower_date, label = TRUE, abbr = TRUE),  # Extract abbreviated month names
+         day = day(flower_date))  # Extract day of the month
+
+# Create a summarized dataset for the count of flower dates by month and day
+flower_date_summary <- flower_date_distribution %>%
+  group_by(month, day) %>%
+  summarise(count = n(), .groups = "drop")
+
+# Use a broader color palette for all months
+color_palette <- scales::hue_pal()(length(unique(flower_date_summary$month)))
+
+# Plot the line graph
+flower_date_line_plot <- ggplot(flower_date_summary, aes(x = day, y = count, color = month, group = month)) +
+  geom_line(size = 1) +  # Draw smooth lines for each month
+  scale_color_manual(values = color_palette) +  # Use a color palette for all months
+  labs(
+    title = "Flower Date Distribution by Month and Day",
+    x = "Day of the Month",
+    y = "Count",
+    color = "Month"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right"
+  )
+
+# Display the plot
+flower_date_line_plot
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Plot Distribution of Temperature by Date ####
+
+# Extract date and temperature from the dataset
+temperature_distribution <- sakura_modern_cleaned %>%
+  select(flower_date, mean_temp_month) %>%
+  mutate(
+    day_of_year = yday(flower_date),  # Convert date to day of the year
+    month = month(flower_date, label = TRUE, abbr = TRUE)  # Extract month for potential color coding
+  )
+
+# Create the plot
+temperature_plot <- ggplot(temperature_distribution, aes(x = day_of_year, y = mean_temp_month)) +
+  geom_point(alpha = 0.5, color = "steelblue") +  # Scatter plot of temperature
+  geom_smooth(method = "loess", color = "darkorange", size = 1, se = FALSE) +  # Smoothed line for trend
+  labs(
+    title = "Temperature Distribution by Date",
+    subtitle = "Scatter plot with temperature trend over the year",
+    x = "Day of the Year",
+    y = "Temperature (°C)"
+  ) +
+  scale_x_continuous(
+    breaks = c(1, 32, 60, 91, 121, 152),  # Manually specify breaks for Jan, Feb, Mar, Apr, May
+    labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun")  # Correct labels
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
+# Display the plot
+print(temperature_plot)
+
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Load and Prepare Data ####
+# Calculate mean flower_doy for each location
+sakura_summary <- sakura_modern_cleaned %>%
+  group_by(latitude, longitude) %>%
+  summarise(mean_flower_doy = mean(flower_doy, na.rm = TRUE)) %>%
+  ungroup()
+
+#### Load Japan's Basemap ####
+japan_map <- ne_countries(scale = "medium", country = "Japan", returnclass = "sf")
+
+#### Create the Map ####
+gis_plot <- ggplot(data = japan_map) +
+  geom_sf(fill = "white", color = "black") +  # Base map of Japan
+  geom_point(
+    data = sakura_summary,
+    aes(x = longitude, y = latitude, color = mean_flower_doy),
+    size = 3, alpha = 0.7
+  ) +
+  scale_color_viridis_c(
+    option = "D",  # Viridis color scale for better visualization
+    name = "Mean Flower DOY"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Average Flowering Dates Across Japan",
+    subtitle = "Darker points indicate later flowering dates",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme(legend.position = "right")
+
+# Display the plot
+print(gis_plot)
+```
+## Excluded Variables
+
+### Year
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Prepare Data ####
+# sakura_historical_cleaned is already loaded
+line_data <- sakura_historical_cleaned %>%
+  filter(!is.na(temp), !is.na(year))  # Ensure no missing values
+
+# Calculate mean temperature to use as a horizontal reference line
+mean_temp <- mean(line_data$temp, na.rm = TRUE)
+
+#### Create Line Plot ####
+line_plot <- ggplot(line_data, aes(x = year, y = temp)) +
+  geom_line(color = "steelblue", size = 1) +  # Line graph with color and size
+  geom_hline(
+    yintercept = mean_temp, 
+    color = "darkorange", 
+    linetype = "dashed", 
+    size = 1
+  ) +  # Add horizontal dashed line for reference
+  labs(
+    title = "Temperature Trend Over Years",
+    subtitle = "Yearly average temperature with reference line",
+    x = "Year",
+    y = "Temperature (°C)"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
+# Display the plot
+print(line_plot)
+
+```
+
+### Longitude
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Improved Plot Latitude and Longitude Distributions ####
+# Plot longitude distribution with bins
+longitude_plot <- ggplot(sakura_modern_cleaned, aes(x = longitude)) +
+  geom_histogram(
+    bins = 20,                    # Adjust the number of bins for better grouping
+    fill = "darkorange", 
+    alpha = 0.8
+  ) +
+  labs(
+    title = "Longitude Distribution",
+    x = "Longitude",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+# Display the plots
+longitude_plot
+
+```
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Prepare Longitude Data ####
+longitude_temp_data <- sakura_modern_cleaned %>%
+  filter(!is.na(longitude), !is.na(mean_temp_month)) %>%
+  group_by(longitude) %>%
+  summarise(mean_temp = mean(mean_temp_month, na.rm = TRUE)) %>%
+  ungroup()
+
+#### Fit a Linear Model ####
+linear_model <- lm(mean_temp ~ longitude, data = longitude_temp_data)
+
+#### Create Plot ####
+longitude_temp_plot <- ggplot(longitude_temp_data, aes(x = longitude, y = mean_temp)) +
+  geom_line(color = "darkorange", size = 1) +  # Line graph with custom color and size
+  geom_abline(
+    slope = coef(linear_model)["longitude"],
+    intercept = coef(linear_model)["(Intercept)"],
+    color = "steelblue",
+    linetype = "dashed",
+    size = 1
+  ) +  # Add a dashed line for the linear relationship
+  labs(
+    title = "Mean Temperature by Longitude",
+    subtitle = "Relationship between Longitude and Mean Temperature with Linear Trend",
+    x = "Longitude",
+    y = "Mean Temperature (°C)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
+# Display the plot
+print(longitude_temp_plot)
+
+```
+
+# Model
+
+## Alternative Model 
+
+```{=tex}
+\begin{equation}
+\text{Alternative Model: } \text{mean\_temp\_month} = \beta_1 \cdot \text{latitude} + \beta_2 \cdot \text{longitude} + \beta_0
+\end{equation}
+
+\noindent
+where:
+\begin{itemize}
+    \item $\text{latitude} \in [20, 50]$, representing geographical latitude in degrees (°N).
+    \item $\text{longitude} \in [120, 150]$, representing geographical longitude in degrees (°E).
+    \item $\beta_1$ and $\beta_2$ are coefficients for $\text{latitude}$ and $\text{longitude}$, respectively.
+    \item $\beta_0$ is the intercept term.
+    \item Both $\text{latitude}$ and $\text{longitude}$ are numerical variables.
+\end{itemize}
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Create a data frame for the coefficients and p-values
+summary_table <- data.frame(
+  Variable = c("latitude", "longitude"),
+  Estimate = c(0.778101, -0.003319),
+  P_Value = c("<2e-16", "0.806")
+)
+
+# Add R-squared information to the table
+r_squared <- 0.6722
+adjusted_r_squared <- 0.6721
+
+# Combine R-squared information into the table
+model_info <- data.frame(
+  Variable = c("R-squared", "Adjusted R-squared"),
+  Estimate = c(r_squared, adjusted_r_squared),
+  P_Value = c("", "") # No p-value for R-squared metrics
+)
+
+# Combine both tables
+final_table <- rbind(summary_table, model_info)
+
+# Beautify the final_table using kable
+kable(
+  final_table,
+  format = "latex",             # Output in LaTeX format
+  booktabs = TRUE,              # Use booktabs style for clean table
+  align = "c",                  # Center align columns
+  col.names = c("Variable", "Estimate", "P-Value") # Column names
+) %>%
+  kable_styling(
+    latex_options = c("striped", "hold_position"), # Add striped rows and fixed position
+    full_width = FALSE                             # Keep the table compact
+  ) %>%
+  add_header_above(c(" " = 1, "Model Summary" = 2)) # Add a header spanning the last two columns
+```
+
+## Model 1
+
+```{=tex}
+\begin{equation}
+\text{Model 1: } \text{flower\_doy} = \beta_1 \cdot \text{temp} + \beta_0
+\end{equation}
+
+\noindent
+where:
+\begin{itemize}
+    \item $\text{temp} \in [1, 12]$, representing the temperature range in degrees Celsius (°C).
+    \item $\beta_1$ is the coefficient of the variable $\text{temp}$, and $\beta_0$ is the intercept term.
+    \item The variable $\text{temp}$ is a numerical variable.
+\end{itemize}
+```
+
+## Model 2
+
+```{=tex}
+\begin{equation}
+\text{Model 2: } \text{mean\_temp\_month} = \beta_1 \cdot \text{day} + \beta_2 \cdot \text{latitude} + \beta_3 \cdot \text{month} + \beta_0
+\end{equation}
+
+\noindent
+where:
+\begin{itemize}
+    \item $\text{latitude} \in [20, 50]$, representing geographical latitude in degrees (°N).
+    \item $\text{day} \in [1, 31]$, representing the day of the month.
+    \item $\text{month}$ is a categorical variable representing months (January to May).
+    \item $\beta_1$, $\beta_2$, $\beta_3$ are coefficients of the linear model, and $\beta_0$ is the intercept term.
+    \item All variables are numerical variables, except for $\text{month}$, which is a categorical variable.
+\end{itemize}
+```
+
+# Result
+
+## Model Result
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Preprocess Test Data for Model 2 ####
+# Ensure necessary columns are present for Model 2
+latitude_time_test_data <- latitude_time_test_data %>%
+  mutate(
+    month = factor(month(flower_date)),  # Convert month to a factor (categorical variable)
+    day = day(flower_date)              # Extract the day from the flower_date
+  )
+
+#### Predictions ####
+# Predict using Model 1
+temp_test_data <- temp_test_data %>%
+  mutate(predicted_flower_doy = predict(model1, newdata = temp_test_data))
+
+# Predict using Model 2
+latitude_time_test_data <- latitude_time_test_data %>%
+  mutate(predicted_mean_temp_month = predict(model2, newdata = latitude_time_test_data))
+
+#### Plot Results ####
+# Plot for Model 1: Actual vs Predicted Flower DOY
+plot_model1 <- ggplot(temp_test_data, aes(x = flower_doy, y = predicted_flower_doy)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  geom_abline(slope = 1, intercept = 0, color = "darkorange", linetype = "dashed") +
+  labs(
+    title = "Model 1: Actual vs Predicted Flower DOY",
+    subtitle = "Prediction accuracy for flower day using temperature data",
+    x = "Actual Flower DOY",
+    y = "Predicted Flower DOY"
+  ) +
+  theme_minimal()
+
+# Plot for Model 2: Actual vs Predicted Mean Temperature
+plot_model2 <- ggplot(latitude_time_test_data, aes(x = mean_temp_month, y = predicted_mean_temp_month)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  geom_abline(slope = 1, intercept = 0, color = "darkorange", linetype = "dashed") +
+  labs(
+    title = "Model 2: Actual vs Predicted Mean Temperature",
+    subtitle = "Prediction accuracy for mean temperature using latitude & time data",
+    x = "Actual Mean Temperature (°C)",
+    y = "Predicted Mean Temperature (°C)"
+  ) +
+  theme_minimal()
+
+# Display the plots
+print(plot_model1)
+print(plot_model2)
+```
+
+## Example of Prediction
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Define Real Data Point ####
+real_data <- tibble(
+  year = 1969,
+  flower_date = as.Date("1969-04-29"),
+  flower_doy = 119,
+  station_name = "Esashi",
+  mean_temp_month = 3.9,
+  latitude = 40.82,
+  longitude = 140.77
+)
+
+#### Prepare Data for Model 2 ####
+# Add derived variables: month and day
+real_data <- real_data %>%
+  mutate(
+    month = factor(month(flower_date)),  # Convert month to categorical variable
+    day = day(flower_date)              # Extract day of the month
+  )
+
+#### Predict Temperature using Model 2 ####
+predicted_mean_temp <- predict(model2, newdata = real_data)
+
+#### Prepare Data for Model 1 ####
+# Create a new data frame for Model 1 with the predicted temperature
+real_data_model1 <- real_data %>%
+  mutate(temp = predicted_mean_temp)  # Add predicted temperature as 'temp'
+
+#### Predict Flower DOY using Model 1 ####
+predicted_flower_doy <- predict(model1, newdata = real_data_model1)
+
+#### Combine Results ####
+comparison <- tibble(
+  Metric = c("Mean Temperature (°C)", "Flower DOY"),
+  Actual = c(real_data$mean_temp_month, real_data$flower_doy),
+  Predicted = c(predicted_mean_temp, predicted_flower_doy)
+)
+
+#### Beautify the comparison table using kable ####
+comparison %>%
+  kable(
+    format = "latex",            # Output in LaTeX format
+    booktabs = TRUE,             # Use booktabs style for clean table
+    align = "c",                 # Center align columns
+    col.names = c("Metric", "Actual", "Predicted")  # Column names
+  ) %>%
+  kable_styling(
+    latex_options = c("striped", "hold_position"),  # Add striped rows and fixed position
+    full_width = FALSE                              # Keep the table compact
+  ) %>%
+  add_header_above(c(" " = 1, "Prediction Summary" = 2))  # Add a header spanning last two columns
+
+```
+
+# Discussion
+
+## Limitation
+
+## Interpretation and Future Research Directions
+
+# Appendix
+
+## Survey Methodology Overview
+
+## Idealized Survey
+
+## Model Details
+
+\newpage
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Create a data frame for residuals
+residuals_table <- data.frame(
+  Statistic = c("Min", "1Q", "Median", "3Q", "Max"),
+  Value = c(-0.25208, -0.14651, -0.04095, 0.04606, 1.30709)
+)
+
+# Create a data frame for coefficients
+coefficients_table <- data.frame(
+  Variable = c("(Intercept)", "temp"),
+  Estimate = c(126.202188, -3.509279),
+  Std_Error = c(0.034396, 0.005355),
+  T_value = c(3669.1, -655.3),
+  P_Value = c("<2e-16", "<2e-16")
+)
+
+# Create a data frame for model summary
+model_summary_table <- data.frame(
+  Metric = c(
+    "Residual Standard Error", 
+    "Multiple R-squared", 
+    "Adjusted R-squared", 
+    "F-statistic", 
+    "P-value"
+  ),
+  Value = c(
+    "0.2337 on 572 degrees of freedom",
+    "0.9987",
+    "0.9987",
+    "4.294e+05 on 1 and 572 DF",
+    "<2e-16"
+  )
+)
+
+# Residuals Table for Model 1
+cat("\nResiduals for Model 1:\n")
+kable(
+  residuals_table, 
+  format = "latex", 
+  booktabs = TRUE, 
+  align = "c"
+) %>%
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  add_header_above(c("Residuals for Model 1" = 2)) 
+
+# Coefficients Table for Model 1
+cat("\nCoefficients for Model 1:\n")
+kable(
+  coefficients_table, 
+  format = "latex", 
+  booktabs = TRUE, 
+  align = "c",
+  col.names = c("Variable", "Estimate", "Std. Error", "t Value", "P-Value")
+) %>%
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  add_header_above(c("Coefficients for Model 1" = 5)) 
+
+# Model Summary Table for Model 1
+cat("\nModel Summary for Model 1:\n")
+kable(
+  model_summary_table, 
+  format = "latex", 
+  booktabs = TRUE, 
+  align = "c",
+  col.names = c("Metric", "Value")
+) %>%
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  add_header_above(c("Model Summary for Model 1" = 2)) 
+
+```
+
+\newpage
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Load necessary library
+library(knitr)
+library(kableExtra)
+
+# Create a data frame for residuals
+residuals_table <- data.frame(
+  Statistic = c("Min", "1Q", "Median", "3Q", "Max"),
+  Value = c(-4.2185, -0.6993, -0.0729, 0.6641, 4.1114)
+)
+
+# Create a data frame for coefficients
+coefficients_table <- data.frame(
+  Variable = c("(Intercept)", "day", "latitude", "month2", "month3", "month4", "month5"),
+  Estimate = c(-9.000439, -0.049223, 0.189083, -0.617982, 2.869383, 6.966108, 10.047363),
+  Std_Error = c(0.289464, 0.003291, 0.012089, 0.219831, 0.114364, 0.164984, 0.237453),
+  T_value = c(-31.093, -14.956, 15.637, -2.811, 25.088, 42.223, 42.313),
+  P_Value = c("<2e-16", "<2e-16", "<2e-16", "0.00496", "<2e-16", "<2e-16", "<2e-16")
+)
+
+# Create a data frame for model summary
+model_summary_table <- data.frame(
+  Metric = c(
+    "Residual Standard Error", 
+    "Multiple R-squared", 
+    "Adjusted R-squared", 
+    "F-statistic", 
+    "P-value"
+  ),
+  Value = c(
+    "1.116 on 4256 degrees of freedom",
+    "0.9255",
+    "0.9254",
+    "8814 on 6 and 4256 DF",
+    "<2e-16"
+  )
+)
+
+# Residuals Table
+cat("\nResiduals for Model 2:\n")
+kable(
+  residuals_table, 
+  format = "latex", 
+  booktabs = TRUE, 
+  align = "c"
+) %>%
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  add_header_above(c("Residuals for Model 2" = 2)) 
+
+# Coefficients Table
+cat("\nCoefficients for Model 2:\n")
+kable(
+  coefficients_table, 
+  format = "latex", 
+  booktabs = TRUE, 
+  align = "c",
+  col.names = c("Variable", "Estimate", "Std. Error", "t Value", "P-Value")
+) %>%
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  add_header_above(c("Coefficients for Model 2" = 5)) 
+
+# Model Summary Table
+cat("\nModel Summary for Model 2:\n")
+kable(
+  model_summary_table, 
+  format = "latex", 
+  booktabs = TRUE, 
+  align = "c",
+  col.names = c("Metric", "Value")
+) %>%
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  add_header_above(c("Model Summary for Model 2" = 2)) 
+
+```
