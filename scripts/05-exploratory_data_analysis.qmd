@@ -1,0 +1,452 @@
+---
+title: "05-exploratory_data_analysis"
+author: "Shaotong LI"
+format: pdf
+editor: visual
+---
+
+# Preamble
+
+#### Purpose: Explore the analysis data
+
+#### Author: Shaotong Li
+
+#### Date: 11 November 2024
+
+#### Contact: maxst.li\@mail.utoronto.ca
+
+#### License: MIT
+
+#### Pre-requisites: analysis data generated in 02-analysis_data
+
+#### Any other information needed? None
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Workspace setup ####
+
+#Install necessary packages
+install.packages("tidyverse")
+install.packages("arrow")
+install.packages("here")
+install.packages("ggplot2")
+install.packages("patchwork")
+install.packages("tidyverse")
+install.packages("sf")
+install.packages("rnaturalearth")
+install.packages("rnaturalearthdata")
+install.packages("ggthemes")
+install.packages("dplyr")
+install.packages("knitr")
+
+# Load libraries
+library(tidyverse)
+library(arrow)
+library(here)
+library(ggplot2)
+library(patchwork)
+library(tidyverse)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggthemes)
+library(dplyr)
+library(knitr)
+
+# Load cleaned datasets
+sakura_historical_cleaned <- read_csv(here::here("data/03-cleaned_data/sakura-historical-cleaned.csv"))
+sakura_modern_cleaned <- read_csv(here::here("data/03-cleaned_data/sakura-modern-cleaned.csv"))
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Plot Distribution of Flower Dates and DOY by Month and Day (Continuous Timeline) ####
+
+# Extract month and day from flower_date
+flower_date_distribution <- sakura_historical_cleaned %>%
+  mutate(
+    month_num = month(flower_date),  # Extract month as a number
+    day_of_year = yday(flower_date)  # Create a continuous day-of-year timeline
+  )
+
+# Group the data to calculate flower_date counts and average flower_doy
+flower_date_summary <- flower_date_distribution %>%
+  group_by(day_of_year) %>%
+  summarise(
+    flower_date_count = n(),
+    flower_doy_mean = mean(flower_doy, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Plot the data with two lines
+flower_date_plot <- ggplot(flower_date_summary, aes(x = day_of_year)) +
+  geom_line(aes(y = flower_date_count, color = "Flower Date Count"), size = 1) +  # Line for flower_date count
+  geom_line(aes(y = flower_doy_mean, color = "Average Flower DOY"), size = 1) +  # Line for flower_doy
+  scale_color_manual(
+    values = c("Flower Date Count" = "steelblue", "Average Flower DOY" = "darkorange"),
+    name = "Legend"
+  ) +
+  labs(
+    title = "Flower Date Distribution and DOY",
+    subtitle = "Flower date count and average flower DOY across days of the year",
+    x = "Day of the Year",
+    y = "Count / DOY"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "right"
+  )
+
+# Display the plot
+print(flower_date_plot)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Prepare Data ####
+# sakura_historical is already loaded
+scatter_data <- sakura_historical_cleaned %>%
+  filter(!is.na(temp), !is.na(flower_doy))  # Ensure no missing values
+
+#### Create Scatter Plot ####
+scatter_plot_no_line <- ggplot(scatter_data, aes(x = temp, y = flower_doy)) +
+  geom_point(aes(color = year), alpha = 0.6, size = 2) +  # Scatter points colored by year
+  scale_color_viridis_c(option = "C", name = "Year") +  # Color scale for year
+  labs(
+    title = "Relationship Between Temperature and Flowering Day",
+    subtitle = "Color represents temporal progression",
+    x = "Temperature (°C)",
+    y = "Flowering Day (DOY)"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
+# Display the plot
+print(scatter_plot_no_line)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Prepare Data ####
+# sakura_historical_cleaned is already loaded
+line_data <- sakura_historical_cleaned %>%
+  filter(!is.na(temp), !is.na(year))  # Ensure no missing values
+
+#### Create Line Plot ####
+line_plot <- ggplot(line_data, aes(x = year, y = temp)) +
+  geom_line(color = "steelblue", size = 1) +  # Line graph with color and size
+  labs(
+    title = "Temperature Trend Over Years",
+    subtitle = "Yearly average temperature",
+    x = "Year",
+    y = "Temperature (°C)"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
+# Display the plot
+print(line_plot)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Improved Plot Latitude and Longitude Distributions ####
+
+# Plot latitude distribution with bins
+latitude_plot <- ggplot(sakura_modern_cleaned, aes(x = latitude)) +
+  geom_histogram(
+    bins = 20,                    # Adjust the number of bins for better grouping
+    fill = "steelblue", 
+    alpha = 0.8
+  ) +
+  labs(
+    title = "Latitude Distribution",
+    x = "Latitude",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+# Plot longitude distribution with bins
+longitude_plot <- ggplot(sakura_modern_cleaned, aes(x = longitude)) +
+  geom_histogram(
+    bins = 20,                    # Adjust the number of bins for better grouping
+    fill = "darkorange", 
+    alpha = 0.8
+  ) +
+  labs(
+    title = "Longitude Distribution",
+    x = "Longitude",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+# Display the plots side by side
+latitude_plot + longitude_plot
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Normalize and Prepare Data ####
+# Longitude data
+longitude_temp_data <- sakura_modern_cleaned %>%
+  filter(!is.na(longitude), !is.na(mean_temp_month)) %>%
+  group_by(longitude) %>%
+  summarise(mean_temp = mean(mean_temp_month, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(type = "Longitude")  # Mark this as Longitude data
+
+# Latitude data
+latitude_temp_data <- sakura_modern_cleaned %>%
+  filter(!is.na(latitude), !is.na(mean_temp_month)) %>%
+  group_by(latitude) %>%
+  summarise(mean_temp = mean(mean_temp_month, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(type = "Latitude")  # Mark this as Latitude data
+
+# Rescale latitude for alignment (latitude scaled to match longitude range)
+latitude_temp_data <- latitude_temp_data %>%
+  mutate(latitude_rescaled = scales::rescale(latitude, to = range(longitude_temp_data$longitude)))
+
+#### Combine Data for Plotting ####
+# Prepare data for plotting
+longitude_temp_data <- longitude_temp_data %>%
+  rename(variable = longitude)
+
+latitude_temp_data <- latitude_temp_data %>%
+  rename(variable = latitude_rescaled)
+
+combined_temp_data <- bind_rows(
+  longitude_temp_data,
+  latitude_temp_data
+)
+
+#### Create Plot ####
+ggplot() +
+  # Longitude line
+  geom_line(
+    data = longitude_temp_data,
+    aes(x = variable, y = mean_temp),
+    color = "steelblue", size = 1
+  ) +
+  # Latitude line (rescaled)
+  geom_line(
+    data = latitude_temp_data,
+    aes(x = variable, y = mean_temp),
+    color = "darkorange", size = 1
+  ) +
+  # Add axis labels and legend
+  labs(
+    title = "Mean Temperature by Longitude and Latitude",
+    subtitle = "Relationship between Longitude/Latitude and mean temperature",
+    x = "Longitude / Rescaled Latitude",
+    y = "Mean Temperature (°C)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  ) +
+  # Add a secondary x-axis for latitude
+  scale_x_continuous(
+    name = "Longitude",
+    sec.axis = sec_axis(
+      ~scales::rescale(., to = range(latitude_temp_data$latitude)),
+      name = "Latitude"
+    )
+  )
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Fit a linear model: mean_temp_month ~ day + latitude + month
+model3 <- lm(mean_temp_month ~ latitude + longitude, data = sakura_modern_cleaned)
+
+# Display summary of the combined model
+cat("\nCombined Model: Linear model for Mean Temperature ~ Day + Latitude + Month\n")
+print(summary(model3))
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Plot Monthly Distribution of Flower Date ####
+
+# Extract the month from flower_date and create a summary table
+flower_month_distribution <- sakura_modern_cleaned %>%
+  mutate(month = month(flower_date, label = TRUE, abbr = TRUE)) %>%  # Extract abbreviated month names
+  count(month)  # Count the occurrences for each month
+
+# Plot the monthly distribution
+flower_month_plot <- ggplot(flower_month_distribution, aes(x = month, y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.8) +  # Use steelblue for the bars
+  labs(
+    title = "Monthly Distribution of Flower Date",
+    x = "Month",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+# Display the plot
+flower_month_plot
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Plot Distribution of Flower Dates by Month and Day ####
+
+# Extract month and day from flower_date
+flower_date_distribution <- sakura_modern_cleaned %>%
+  mutate(month = month(flower_date, label = TRUE, abbr = TRUE),  # Extract abbreviated month names
+         day = day(flower_date))  # Extract day of the month
+
+# Create a summarized dataset for the count of flower dates by month and day
+flower_date_summary <- flower_date_distribution %>%
+  group_by(month, day) %>%
+  summarise(count = n(), .groups = "drop")
+
+# Use a broader color palette for all months
+color_palette <- scales::hue_pal()(length(unique(flower_date_summary$month)))
+
+# Plot the line graph
+flower_date_line_plot <- ggplot(flower_date_summary, aes(x = day, y = count, color = month, group = month)) +
+  geom_line(size = 1) +  # Draw smooth lines for each month
+  scale_color_manual(values = color_palette) +  # Use a color palette for all months
+  labs(
+    title = "Flower Date Distribution by Month and Day",
+    x = "Day of the Month",
+    y = "Count",
+    color = "Month"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right"
+  )
+
+# Display the plot
+flower_date_line_plot
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Load and Prepare Data ####
+# Calculate mean flower_doy for each location
+sakura_summary <- sakura_modern_cleaned %>%
+  group_by(latitude, longitude) %>%
+  summarise(mean_flower_doy = mean(flower_doy, na.rm = TRUE)) %>%
+  ungroup()
+
+#### Load Japan's Basemap ####
+japan_map <- ne_countries(scale = "medium", country = "Japan", returnclass = "sf")
+
+#### Create the Map ####
+gis_plot <- ggplot(data = japan_map) +
+  geom_sf(fill = "white", color = "black") +  # Base map of Japan
+  geom_point(
+    data = sakura_summary,
+    aes(x = longitude, y = latitude, color = mean_flower_doy),
+    size = 3, alpha = 0.7
+  ) +
+  scale_color_viridis_c(
+    option = "D",  # Viridis color scale for better visualization
+    name = "Mean Flower DOY"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Average Flowering Dates Across Japan",
+    subtitle = "Darker points indicate later flowering dates",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme(legend.position = "right")
+
+# Display the plot
+print(gis_plot)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Load and Prepare Data ####
+# Calculate mean temperature for each location
+temperature_summary <- sakura_modern_cleaned %>%
+  group_by(latitude, longitude) %>%
+  summarise(mean_temp_month = mean(mean_temp_month, na.rm = TRUE)) %>%
+  ungroup()
+
+#### Load Japan's Basemap ####
+japan_map <- ne_countries(scale = "medium", country = "Japan", returnclass = "sf")
+
+#### Create the Map for Temperature ####
+gis_plot_temp <- ggplot(data = japan_map) +
+  geom_sf(fill = "white", color = "black") +  # Base map of Japan
+  geom_point(
+    data = temperature_summary,
+    aes(x = longitude, y = latitude, color = mean_temp_month),
+    size = 3, alpha = 0.7
+  ) +
+  scale_color_gradientn(
+    colors = c("#2c7bb6", "#abd9e9", "#ffffbf", "#fdae61", "#d7191c"),  # Blue to red gradient
+    name = "Mean Temperature (°C)"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Average Monthly Temperatures Across Japan",
+    subtitle = "Warmer colors indicate higher temperatures",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme(legend.position = "right")
+
+# Display the plot
+print(gis_plot_temp)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#### Plot Distribution of Temperature by Date ####
+
+# Extract date and temperature from the dataset
+temperature_distribution <- sakura_modern_cleaned %>%
+  select(flower_date, mean_temp_month) %>%
+  mutate(
+    day_of_year = yday(flower_date),  # Convert date to day of the year
+    month = month(flower_date, label = TRUE, abbr = TRUE)  # Extract month for potential color coding
+  )
+
+# Create the plot
+temperature_plot <- ggplot(temperature_distribution, aes(x = day_of_year, y = mean_temp_month)) +
+  geom_point(alpha = 0.5, color = "steelblue") +  # Scatter plot of temperature
+  geom_smooth(method = "loess", color = "darkorange", size = 1, se = FALSE) +  # Smoothed line for trend
+  labs(
+    title = "Temperature Distribution by Date",
+    subtitle = "Scatter plot with temperature trend over the year",
+    x = "Day of the Year",
+    y = "Temperature (°C)"
+  ) +
+  scale_x_continuous(
+    breaks = c(1, 32, 60, 91, 121, 152),  # Manually specify breaks for Jan, Feb, Mar, Apr, May
+    labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun")  # Correct labels
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12)
+  )
+
+# Display the plot
+print(temperature_plot)
+
+
+```
