@@ -30,8 +30,8 @@ This directory contains all data files used in the project.
 
 #### `03-cleaned_data/`: Contains cleaned data files.
 
--   `sakura-historical-cleaned.csv`: Cleaned data for Historical Sakura Flowering.
--   `sakura-modern-cleaned.csv`: Cleaned data for Modern Sakura Flowering and Temperature data.
+-   `sakura-historical-cleaned.parquet`: Cleaned data for Historical Sakura Flowering.
+-   `sakura-modern-cleaned.parquet`: Cleaned data for Modern Sakura Flowering and Temperature data.
 
 ### models
 
