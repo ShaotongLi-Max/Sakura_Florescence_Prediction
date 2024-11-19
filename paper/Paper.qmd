@@ -49,8 +49,8 @@ library(knitr)
 library(kableExtra)
 
 # Load cleaned datasets
-sakura_historical_cleaned <- read_csv(here::here("data/03-cleaned_data/sakura-historical-cleaned.csv"))
-sakura_modern_cleaned <- read_csv(here::here("data/03-cleaned_data/sakura-modern-cleaned.csv"))
+sakura_historical_cleaned <-read_parquet(here::here("data/03-cleaned_data/sakura-historical-cleaned.parquet"))
+sakura_modern_cleaned <- read_parquet(here::here("data/03-cleaned_data/sakura-modern-cleaned.parquet"))
 # Load temp_test_data for Model 1
 temp_test_data <- read_parquet(here::here("data/02-analysis_data/temp_test_data.parquet"))
 # Load latitude&time_test_data for Model 2
