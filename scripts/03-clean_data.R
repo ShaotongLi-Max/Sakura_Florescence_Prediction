@@ -52,46 +52,46 @@ write_parquet(sakura_historical, "data/03-cleaned_data/sakura-historical-cleaned
 cat("Cleaned historical data saved to data/03-cleaned_data/sakura-historical-cleaned.parquet\n")
 
 #### Clean Modern Data ####
-# Read the raw data files
+
+# Step 1: Read raw data
 sakura_modern <- read_csv("data/01-raw_data/sakura-modern.csv")
 temperatures_modern <- read_csv("data/01-raw_data/temperatures-modern.csv")
 
-# Step 1: Extract year and month from 'flower_date' in sakura_modern
+# Step 2: Extract year and month from 'flower_date' in sakura_modern
 sakura_modern <- sakura_modern %>%
   mutate(flower_date = as.Date(flower_date, format = "%Y-%m-%d"),
          flower_year = year(flower_date),
          flower_month = month(flower_date))
 
-# Step 2: Convert month names in temperatures_modern to numbers and ensure unique year, month, and station_name combinations
+# Step 3: Ensure temperatures_modern has numeric month values
 temperatures_modern <- temperatures_modern %>%
-  mutate(month = match(month, month.abb)) %>%
-  group_by(year, month, station_name) %>%
-  summarize(mean_temp_c = mean(mean_temp_c, na.rm = TRUE), .groups = "drop")
+  mutate(month = match(month, month.abb))  # Convert month names to numeric
 
-# Step 3: Merge sakura_modern with temperatures_modern by flower_year, flower_month, and station_name
+# Step 4: Match temperatures based on flower_date's year and month
 merged_data <- sakura_modern %>%
-  left_join(temperatures_modern, by = c("flower_year" = "year", 
-                                        "flower_month" = "month", 
-                                        "station_name" = "station_name")) %>%
+  left_join(temperatures_modern, 
+            by = c("flower_year" = "year", 
+                   "flower_month" = "month", 
+                   "station_name" = "station_name")) %>%
   rename(mean_temp_month = mean_temp_c)
 
-# Step 4: Round latitude and longitude to two decimal places
+# Step 5: Round latitude and longitude to two decimal places
 merged_data <- merged_data %>%
   mutate(latitude = round(latitude, 2),
          longitude = round(longitude, 2))
 
-# Step 5: Select only the required columns
+# Step 6: Select required columns
 cleaned_data <- merged_data %>%
   select(year = flower_year, flower_date, flower_doy, station_name, mean_temp_month, latitude, longitude)
 
-# Step 6: Remove rows with any NA values
+# Step 7: Remove rows with any NA values
 cleaned_data <- cleaned_data %>%
   drop_na()
 
-# Create directory for cleaned data if it doesn't exist
+# Step 8: Create directory for cleaned data if it doesn't exist
 dir.create("data/03-cleaned_data", recursive = TRUE, showWarnings = FALSE)
 
-# Save the cleaned data as parquet
+# Step 9: Save cleaned data as parquet
 write_parquet(cleaned_data, "data/03-cleaned_data/sakura-modern-cleaned.parquet")
 
 cat("Cleaned modern data saved to data/03-cleaned_data/sakura-modern-cleaned.parquet\n")
