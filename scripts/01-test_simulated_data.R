@@ -20,8 +20,8 @@ library(arrow)
 #### Load Simulated Data ####
 
 # Load the simulated datasets
-simulated_latitude_time <- read_parquet(here::here("../data/00-simulated_data/simulated_latitude_time.parquet"))
-simulated_temp <- read_parquet(here::here("../data/00-simulated_data/simulated_temp.parquet"))
+simulated_latitude_time <- read_parquet(here::here("data/00-simulated_data/simulated_latitude_time.parquet"))
+simulated_temp <- read_parquet(here::here("data/00-simulated_data/simulated_temp.parquet"))
 
 #### Test Simulated Data ####
 

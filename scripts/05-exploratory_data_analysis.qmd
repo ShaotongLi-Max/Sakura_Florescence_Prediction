@@ -53,8 +53,8 @@ library(dplyr)
 library(knitr)
 
 # Load cleaned datasets
-sakura_historical_cleaned <- read_csv(here::here("data/03-cleaned_data/sakura-historical-cleaned.csv"))
-sakura_modern_cleaned <- read_csv(here::here("data/03-cleaned_data/sakura-modern-cleaned.csv"))
+sakura_historical_cleaned <-read_parquet(here::here("data/03-cleaned_data/sakura-historical-cleaned.parquet"))
+sakura_modern_cleaned <- read_parquet(here::here("data/03-cleaned_data/sakura-modern-cleaned.parquet"))
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}

@@ -21,10 +21,10 @@ library(arrow)  # For reading Parquet files
 library(here)
 
 # Read the analysis data
-temp_train <- read_parquet(here::here("../data/02-analysis_data/temp_train_data.parquet"))
-temp_test <- read_parquet(here::here("../data/02-analysis_data/temp_test_data.parquet"))
-latitude_time_train <- read_parquet(here::here("../data/02-analysis_data/latitude&time_train_data.parquet"))
-latitude_time_test <- read_parquet(here::here("../data/02-analysis_data/latitude&time_test_data.parquet"))
+temp_train <- read_parquet(here::here("data/02-analysis_data/temp_train_data.parquet"))
+temp_test <- read_parquet(here::here("data/02-analysis_data/temp_test_data.parquet"))
+latitude_time_train <- read_parquet(here::here("data/02-analysis_data/latitude&time_train_data.parquet"))
+latitude_time_test <- read_parquet(here::here("data/02-analysis_data/latitude&time_test_data.parquet"))
 
 #### Test data ####
 

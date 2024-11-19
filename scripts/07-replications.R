@@ -22,6 +22,14 @@ message("Data download complete.")
 source("scripts/03-clean_data.R")
 message("Data cleaning complete.")
 
-# 4. Model Data
+# 4. Test Simulated Data
+source("scripts/01-test_simulated_data.R")
+message("Simulated data testing complete.")
+
+# 5. Test Analysis Data
+source("scripts/04-test_analysis_data.R")
+message("Analysis data testing complete.")
+
+# 6. Model Data
 source("scripts/06-model_data.R")
 message("Modeling data complete.")

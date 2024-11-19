@@ -46,10 +46,10 @@ sakura_historical <- sakura_historical %>%
 # Create directory for cleaned data if it doesn't exist
 dir.create("data/03-cleaned_data", recursive = TRUE, showWarnings = FALSE)
 
-# Save the cleaned data
-write_csv(sakura_historical, "data/03-cleaned_data/sakura-historical-cleaned.csv")
+# Save the cleaned data as parquet
+write_parquet(sakura_historical, "data/03-cleaned_data/sakura-historical-cleaned.parquet")
 
-cat("Cleaned historical data saved to data/03-cleaned_data/sakura-historical-cleaned.csv\n")
+cat("Cleaned historical data saved to data/03-cleaned_data/sakura-historical-cleaned.parquet\n")
 
 #### Clean Modern Data ####
 # Read the raw data files
@@ -91,15 +91,15 @@ cleaned_data <- cleaned_data %>%
 # Create directory for cleaned data if it doesn't exist
 dir.create("data/03-cleaned_data", recursive = TRUE, showWarnings = FALSE)
 
-# Save the cleaned data
-write_csv(cleaned_data, "data/03-cleaned_data/sakura-modern-cleaned.csv")
+# Save the cleaned data as parquet
+write_parquet(cleaned_data, "data/03-cleaned_data/sakura-modern-cleaned.parquet")
 
-cat("Cleaned modern data saved to data/03-cleaned_data/sakura-modern-cleaned.csv\n")
+cat("Cleaned modern data saved to data/03-cleaned_data/sakura-modern-cleaned.parquet\n")
 
 #### Prepare Analysis Data ####
 
 # Read the cleaned historical data
-sakura_historical <- read_csv("data/03-cleaned_data/sakura-historical-cleaned.csv")
+sakura_historical <- read_parquet("data/03-cleaned_data/sakura-historical-cleaned.parquet")
 
 # Step 1: Select only temp and flower_doy
 sakura_historical_selected <- sakura_historical %>%
@@ -122,7 +122,7 @@ cat("Saved temp_train_data.parquet and temp_test_data.parquet to data/02-analysi
 
 
 # Read the cleaned modern data
-sakura_modern <- read_csv("data/03-cleaned_data/sakura-modern-cleaned.csv")
+sakura_modern <- read_parquet("data/03-cleaned_data/sakura-modern-cleaned.parquet")
 
 # Step 4: Select only flower_date, mean_temp_month, and latitude
 sakura_modern_selected <- sakura_modern %>%
