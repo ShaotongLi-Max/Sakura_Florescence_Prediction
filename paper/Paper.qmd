@@ -32,7 +32,6 @@ install.packages("ggthemes")
 install.packages("dplyr")
 install.packages("knitr")
 install.packages("kableExtra")
-
 # Load libraries
 library(tidyverse)
 library(arrow)
@@ -653,28 +652,36 @@ As shown in equation~\ref{eq:alternative_model},the objective of this alternativ
 #| label: tbl-am
 #| tbl-cap: "Alternative Model Summary"
 
-# Create a data frame for the coefficients and p-values
-summary_table <- data.frame(
-  Variable = c("latitude", "longitude"),
-  Estimate = c(0.778101, -0.003319),
-  P_Value = c("<2e-16", "0.806")
+# Load necessary library
+library(knitr)
+library(kableExtra)
+
+# Train the model
+alternative_model <- lm(mean_temp_month ~ latitude + longitude, data = sakura_modern_cleaned)
+
+# Extract coefficients and p-values
+coefficients_summary <- summary(alternative_model)$coefficients
+coefficients_table <- data.frame(
+  Variable = rownames(coefficients_summary),
+  Estimate = coefficients_summary[, "Estimate"],
+  P_Value = format.pval(coefficients_summary[, "Pr(>|t|)"], digits = 4) # Properly formatted p-values
 )
 
-# Add R-squared information to the table
-r_squared <- 0.6722
-adjusted_r_squared <- 0.6721
+# Extract R-squared and Adjusted R-squared
+r_squared <- summary(alternative_model)$r.squared
+adjusted_r_squared <- summary(alternative_model)$adj.r.squared
 
-# Combine R-squared information into the table
+# Add R-squared information to the table
 model_info <- data.frame(
   Variable = c("R-squared", "Adjusted R-squared"),
   Estimate = c(r_squared, adjusted_r_squared),
   P_Value = c("", "") # No p-value for R-squared metrics
 )
 
-# Combine both tables
-final_table <- rbind(summary_table, model_info)
+# Combine coefficients and model information
+final_table <- rbind(coefficients_table, model_info)
 
-# Beautify the final_table using kable
+# Generate LaTeX table
 kable(
   final_table,
   format = "latex",             # Output in LaTeX format
@@ -685,8 +692,8 @@ kable(
   kable_styling(
     latex_options = c("striped", "hold_position"), # Add striped rows and fixed position
     full_width = FALSE                             # Keep the table compact
-  ) %>%
-  add_header_above(c(" " = 1, "Model Summary" = 2)) # Add a header spanning the last two columns
+  ) 
+
 ```
 
 @tbl-am provides the summary of the alternative model, which includes estimates and p-values for both latitude and longitude. The results indicate that latitude has a strong and statistically significant relationship with temperature, whereas longitude does not ($p\text{-value} = 0.806$). This finding suggests that latitude is the predominant predictor, which aligns with the analysis in @sec-data that showed a stronger correlation between latitude and temperature compared to longitude.
@@ -796,6 +803,11 @@ print(plot_model1)
 #| tbl-cap: "RMSE for Model 1"
 # Create a data frame for model summary
 
+# Calculate p-value for the F-statistic dynamically
+f_stat_1 <- summary(model1)$fstatistic
+p_value_1 <- pf(f_stat_1[1], f_stat_1[2], f_stat_1[3], lower.tail = FALSE)
+
+# Create a data frame for model summary (dynamically extracted values)
 model_summary_table <- data.frame(
   Metric = c(
     "Residual Standard Error", 
@@ -805,15 +817,15 @@ model_summary_table <- data.frame(
     "P-value"
   ),
   Value = c(
-    "0.2337 on 572 degrees of freedom",
-    "0.9987",
-    "0.9987",
-    "4.294e+05 on 1 and 572 DF",
-    "<2e-16"
+    paste0(round(summary(model1)$sigma, 4), " on ", summary(model1)$df[2], " degrees of freedom"), # Residual Standard Error
+    round(summary(model1)$r.squared, 4), # Multiple R-squared
+    round(summary(model1)$adj.r.squared, 4), # Adjusted R-squared
+    paste0(round(f_stat_1[1], 4), " on ", f_stat_1[2], " and ", f_stat_1[3], " DF"), # F-statistic
+    format.pval(p_value_1, digits = 4) # Properly formatted p-value
   )
 )
 
-# Model Summary Table for Model 1
+# Generate LaTeX table for Model 1 summary
 kable(
   model_summary_table, 
   format = "latex", 
@@ -821,8 +833,7 @@ kable(
   align = "c",
   col.names = c("Metric", "Value")
 ) %>%
-  kable_styling(latex_options = c("striped", "hold_position")) %>%
-  add_header_above(c("Model Summary for Model 1" = 2))
+  kable_styling(latex_options = c("striped", "hold_position")) 
 
 ```
 
@@ -853,7 +864,11 @@ print(plot_model2)
 #| label: tbl-model2-RMSE
 #| tbl-cap: "RMSE for Model 2"
 
-# Create a data frame for model summary
+# Calculate p-value for the F-statistic dynamically
+f_stat_2 <- summary(model2)$fstatistic
+p_value_2 <- pf(f_stat_2[1], f_stat_2[2], f_stat_2[3], lower.tail = FALSE)
+
+# Create a data frame for model summary (dynamically extracted values)
 model_summary_table <- data.frame(
   Metric = c(
     "Residual Standard Error", 
@@ -863,15 +878,15 @@ model_summary_table <- data.frame(
     "P-value"
   ),
   Value = c(
-    "1.116 on 4256 degrees of freedom",
-    "0.9255",
-    "0.9254",
-    "8814 on 6 and 4256 DF",
-    "<2e-16"
+    paste0(round(summary(model2)$sigma, 4), " on ", summary(model2)$df[2], " degrees of freedom"), # Residual Standard Error
+    round(summary(model2)$r.squared, 4), # Multiple R-squared
+    round(summary(model2)$adj.r.squared, 4), # Adjusted R-squared
+    paste0(round(f_stat_2[1], 4), " on ", f_stat_2[2], " and ", f_stat_2[3], " DF"), # F-statistic
+    format.pval(p_value_2, digits = 4) # Properly formatted p-value
   )
 )
 
-# Model Summary Table for Model 2
+# Generate LaTeX table for Model 2 summary
 kable(
   model_summary_table, 
   format = "latex", 
@@ -879,8 +894,7 @@ kable(
   align = "c",
   col.names = c("Metric", "Value")
 ) %>%
-  kable_styling(latex_options = c("striped", "hold_position")) %>%
-  add_header_above(c("Model Summary for Model 2" = 2))
+  kable_styling(latex_options = c("striped", "hold_position"))
 
 ```
 
@@ -937,13 +951,13 @@ print(plot_predicted_temp_distribution)
 #| label: tbl-model1-coefficients
 #| tbl-cap: "Coefficients for Model 1"
 
-# Create a data frame for coefficients
+# Extract coefficients summary and format p-values properly
+coefficients_summary <- summary(model1)$coefficients
 coefficients_table <- data.frame(
-  Variable = c("(Intercept)", "temp"),
-  Estimate = c(126.202188, -3.509279),
-  Std_Error = c(0.034396, 0.005355),
-  T_value = c(3669.1, -655.3),
-  P_Value = c("<2e-16", "<2e-16")
+  Estimate = coefficients_summary[, "Estimate"], # Extract estimates
+  Std_Error = coefficients_summary[, "Std. Error"], # Extract standard errors
+  T_value = coefficients_summary[, "t value"], # Extract t-values
+  P_Value = format.pval(coefficients_summary[, "Pr(>|t|)"], digits = 4) # Proper p-value formatting
 )
 
 # Coefficients Table for Model 1
@@ -952,10 +966,10 @@ kable(
   format = "latex", 
   booktabs = TRUE, 
   align = "c",
-  col.names = c("Variable", "Estimate", "Std. Error", "t Value", "P-Value")
+  col.names = c("Estimate", "Std. Error", "t Value", "P-Value")
 ) %>%
-  kable_styling(latex_options = c("striped", "hold_position")) %>%
-  add_header_above(c("Coefficients for Model 1" = 5)) 
+  kable_styling(latex_options = c("striped", "hold_position")) 
+
 ```
 
 @tbl-model1-coefficients presents the coefficients for Model 1, which predicts the bloom day of the year based on temperature. The negative coefficient for temperature ($-3.509$) indicates that as temperature increases, the flowering day occurs earlier in the year. This aligns with established phenological observations, suggesting that warmer temperatures accelerate the blooming process. The strong statistical significance of the temperature variable ($p\text{-value} < 2 \times 10^{-16}$) confirms its importance in the model.
@@ -964,13 +978,13 @@ kable(
 #| label: tbl-model2-coefficients
 #| tbl-cap: "Coefficients for Model 2"
 
-# Create a data frame for coefficients
+# Extract coefficients summary and format p-values properly
+coefficients_summary <- summary(model2)$coefficients
 coefficients_table <- data.frame(
-  Variable = c("(Intercept)", "day", "latitude", "month2", "month3", "month4", "month5"),
-  Estimate = c(-9.000439, -0.049223, 0.189083, -0.617982, 2.869383, 6.966108, 10.047363),
-  Std_Error = c(0.289464, 0.003291, 0.012089, 0.219831, 0.114364, 0.164984, 0.237453),
-  T_value = c(-31.093, -14.956, 15.637, -2.811, 25.088, 42.223, 42.313),
-  P_Value = c("<2e-16", "<2e-16", "<2e-16", "0.00496", "<2e-16", "<2e-16", "<2e-16")
+  Estimate = coefficients_summary[, "Estimate"], # Extract estimates
+  Std_Error = coefficients_summary[, "Std. Error"], # Extract standard errors
+  T_value = coefficients_summary[, "t value"], # Extract t-values
+  P_Value = format.pval(coefficients_summary[, "Pr(>|t|)"], digits = 4) # Proper p-value formatting
 )
 
 # Coefficients Table for Model 2
@@ -979,10 +993,10 @@ kable(
   format = "latex", 
   booktabs = TRUE, 
   align = "c",
-  col.names = c("Variable", "Estimate", "Std. Error", "t Value", "P-Value")
+  col.names = c("Estimate", "Std. Error", "t Value", "P-Value")
 ) %>%
-  kable_styling(latex_options = c("striped", "hold_position")) %>%
-  add_header_above(c("Coefficients for Model 2" = 5)) 
+  kable_styling(latex_options = c("striped", "hold_position")) 
+
 ```
 
 @tbl-model2-coefficients provides the coefficients for Model 2, which estimates the mean monthly temperature based on latitude, day, and month. The small p-values for all variables indicate strong statistical significance, confirming their importance in predicting mean temperature (nearly all p-values are less than $2 \times 10^{-16}$, with the largest one around $0.005$). The coefficient for latitude ($0.189$) suggests that temperature increases with latitude, albeit at a modest rate. The day variable has a small negative coefficient ($-0.049$), indicating a slight decrease in temperature as the month progresses. The month coefficients, treated as categorical, reflect expected seasonal changes in temperature, with notable increases from March to May (from around $-0.62$ to $10.05$). The significance of all predictors underscores their relevance in estimating temperature variations, suggesting that both geographic and temporal factors play important roles in determining temperature dynamics.
@@ -1045,9 +1059,7 @@ comparison %>%
   kable_styling(
     latex_options = c("striped", "hold_position"),  # Add striped rows and fixed position
     full_width = FALSE                              # Keep the table compact
-  ) %>%
-  add_header_above(c(" " = 1, "Prediction Summary" = 2))  # Add a header spanning last two columns
-
+  ) 
 
 ```
 
@@ -1182,22 +1194,26 @@ This section provides full summary table for model 1 and model 2.
 #| label: tbl-model1
 #| tbl-cap: "Model 1 Summary Tables"
 
-# Create a data frame for residuals
+# Extract residuals statistics
 residuals_table <- data.frame(
   Statistic = c("Min", "1Q", "Median", "3Q", "Max"),
-  Value = c(-0.25208, -0.14651, -0.04095, 0.04606, 1.30709)
+  Value = quantile(residuals(model1), probs = c(0, 0.25, 0.5, 0.75, 1))
 )
 
-# Create a data frame for coefficients
+# Extract coefficients summary and format p-values properly
+coefficients_summary <- summary(model1)$coefficients
 coefficients_table <- data.frame(
-  Variable = c("(Intercept)", "temp"),
-  Estimate = c(126.202188, -3.509279),
-  Std_Error = c(0.034396, 0.005355),
-  T_value = c(3669.1, -655.3),
-  P_Value = c("<2e-16", "<2e-16")
+  Estimate = coefficients_summary[, "Estimate"],
+  Std_Error = coefficients_summary[, "Std. Error"],
+  T_value = coefficients_summary[, "t value"],
+  P_Value = format.pval(coefficients_summary[, "Pr(>|t|)"], digits = 4) # Proper p-value formatting
 )
 
-# Create a data frame for model summary
+# Calculate p-value for the F-statistic dynamically
+f_stat_1 <- summary(model1)$fstatistic
+p_value_1 <- pf(f_stat_1[1], f_stat_1[2], f_stat_1[3], lower.tail = FALSE)
+
+# Extract model summary metrics
 model_summary_table <- data.frame(
   Metric = c(
     "Residual Standard Error", 
@@ -1207,15 +1223,15 @@ model_summary_table <- data.frame(
     "P-value"
   ),
   Value = c(
-    "0.2337 on 572 degrees of freedom",
-    "0.9987",
-    "0.9987",
-    "4.294e+05 on 1 and 572 DF",
-    "<2e-16"
+    paste0(round(summary(model1)$sigma, 4), " on ", summary(model1)$df[2], " degrees of freedom"),
+    round(summary(model1)$r.squared, 4),
+    round(summary(model1)$adj.r.squared, 4),
+    paste0(round(f_stat_1[1], 4), " on ", f_stat_1[2], " and ", f_stat_1[3], " DF"),
+    format.pval(p_value_1, digits = 4) # Format p-value dynamically
   )
 )
 
-# Residuals Table for Model 1
+# LaTeX table generation remains unchanged
 kable(
   residuals_table, 
   format = "latex", 
@@ -1225,18 +1241,16 @@ kable(
   kable_styling(latex_options = c("striped", "hold_position")) %>%
   add_header_above(c("Residuals for Model 1" = 2)) 
 
-# Coefficients Table for Model 1
 kable(
   coefficients_table, 
   format = "latex", 
   booktabs = TRUE, 
   align = "c",
-  col.names = c("Variable", "Estimate", "Std. Error", "t Value", "P-Value")
+  col.names = c("Estimate", "Std. Error", "t Value", "P-Value")
 ) %>%
   kable_styling(latex_options = c("striped", "hold_position")) %>%
   add_header_above(c("Coefficients for Model 1" = 5)) 
 
-# Model Summary Table for Model 1
 kable(
   model_summary_table, 
   format = "latex", 
@@ -1247,6 +1261,7 @@ kable(
   kable_styling(latex_options = c("striped", "hold_position")) %>%
   add_header_above(c("Model Summary for Model 1" = 2)) 
 
+
 ```
 
 \clearpage
@@ -1255,22 +1270,26 @@ kable(
 #| label: tbl-model2
 #| tbl-cap: "Model 2 Summary Tables"
 
-# Create a data frame for residuals
+# Extract residuals statistics from Model 2
 residuals_table <- data.frame(
   Statistic = c("Min", "1Q", "Median", "3Q", "Max"),
-  Value = c(-4.2185, -0.6993, -0.0729, 0.6641, 4.1114)
+  Value = quantile(residuals(model2), probs = c(0, 0.25, 0.5, 0.75, 1))
 )
 
-# Create a data frame for coefficients
+# Extract coefficients summary and format p-values properly
+coefficients_summary <- summary(model2)$coefficients
 coefficients_table <- data.frame(
-  Variable = c("(Intercept)", "day", "latitude", "month2", "month3", "month4", "month5"),
-  Estimate = c(-9.000439, -0.049223, 0.189083, -0.617982, 2.869383, 6.966108, 10.047363),
-  Std_Error = c(0.289464, 0.003291, 0.012089, 0.219831, 0.114364, 0.164984, 0.237453),
-  T_value = c(-31.093, -14.956, 15.637, -2.811, 25.088, 42.223, 42.313),
-  P_Value = c("<2e-16", "<2e-16", "<2e-16", "0.00496", "<2e-16", "<2e-16", "<2e-16")
+  Estimate = coefficients_summary[, "Estimate"],
+  Std_Error = coefficients_summary[, "Std. Error"],
+  T_value = coefficients_summary[, "t value"],
+  P_Value = format.pval(coefficients_summary[, "Pr(>|t|)"], digits = 4) # Proper p-value formatting
 )
 
-# Create a data frame for model summary
+# Calculate p-value for the F-statistic dynamically
+f_stat_2 <- summary(model2)$fstatistic
+p_value_2 <- pf(f_stat_2[1], f_stat_2[2], f_stat_2[3], lower.tail = FALSE)
+
+# Extract model summary metrics
 model_summary_table <- data.frame(
   Metric = c(
     "Residual Standard Error", 
@@ -1280,13 +1299,15 @@ model_summary_table <- data.frame(
     "P-value"
   ),
   Value = c(
-    "1.116 on 4256 degrees of freedom",
-    "0.9255",
-    "0.9254",
-    "8814 on 6 and 4256 DF",
-    "<2e-16"
+    paste0(round(summary(model2)$sigma, 4), " on ", summary(model2)$df[2], " degrees of freedom"),
+    round(summary(model2)$r.squared, 4),
+    round(summary(model2)$adj.r.squared, 4),
+    paste0(round(f_stat_2[1], 4), " on ", f_stat_2[2], " and ", f_stat_2[3], " DF"),
+    format.pval(p_value_2, digits = 4) # Format p-value dynamically
   )
 )
+
+# LaTeX table generation remains unchanged
 
 # Residuals Table
 kable(
@@ -1304,7 +1325,7 @@ kable(
   format = "latex", 
   booktabs = TRUE, 
   align = "c",
-  col.names = c("Variable", "Estimate", "Std. Error", "t Value", "P-Value")
+  col.names = c("Estimate", "Std. Error", "t Value", "P-Value")
 ) %>%
   kable_styling(latex_options = c("striped", "hold_position")) %>%
   add_header_above(c("Coefficients for Model 2" = 5)) 
