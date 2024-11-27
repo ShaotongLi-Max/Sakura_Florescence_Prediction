@@ -1,8 +1,8 @@
-# The 2024 U.S. Presidential Election Forecast
+# Sakura Florescence Prediction
 
 ## Overview
 
-The Sakura Florescence Prediction project aims to investigate and model the factors influencing the blooming dates of cherry blossoms across Japan. By integrating historical and modern data on temperature, location, and flowering dates, the project develops predictive models to explore how climatic and geographical factors interact with floral phenology.
+The Sakura Florescence Prediction project aims to investigate and model the factors influencing the blooming dates of cherry blossoms across Japan. By integrating historical and modern data on temperature, location, and flowering dates, the project develops two predictive models to explore how climatic and geographical factors interact with floral phenology.
 
 ## Project Structure
 
@@ -23,8 +23,8 @@ This directory contains all data files used in the project.
 
 #### `02-analysis_data/`: Contains data files prepared for model analysis, divided into training and testing sets.
 
--   `latitude&time_test_data.parquet`: Training datasets for model 2 & 3.
--   `latitude&time_train_data.parquet`: Testing datasets for model 2 & 3.
+-   `latitude&time_test_data.parquet`: Training datasets for model 2.
+-   `latitude&time_train_data.parquet`: Testing datasets for model 2.
 -   `temp_test_data.parquet`: Testing datasets for model 1.
 -   `temp_train_data.parquet`: Training datasets for model 1.
 
@@ -51,13 +51,15 @@ Contains auxiliary files and documentation.
 -   `03-Plots_and_tables`: Resources for plotting and tables.
 
 #### `sketches/`: This folder contains preliminary drafts, diagrams, or conceptual sketches related to the project.
+-   `sketch.png`: Draft of plots used in paper.
 
 ### paper
 
 This directory includes files related to the research paper.
 
--   `paper.qmd`: Quarto document source file for the paper.
 -   `paper.pdf`: Final version of the research paper in PDF format.
+-   `paper.qmd`: Quarto document source file for the paper.
+-   `references.bib`: Contain all references, used together with quarto source file.
 
 ### scripts
 
@@ -71,6 +73,7 @@ R scripts used for data simulation, processing, model training, testing, and rep
 -   `05-exploratory_data_analysis.qmd`: Quarto document for exploratory data analysis.
 -   `06-model_data.R`: Script for model training and evaluation.
 -   `07-replications.R`: Script to replicate key results in the analysis.
+-   `08-packages_install.R`: Script to install all neccesary packages for scripts and paper (please run this script first).
 
 ### Project File
 
