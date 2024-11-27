@@ -8,11 +8,6 @@
 # Any other information needed? None
 
 #### Workspace setup ####
-# Install required packages
-#install.packages("tidyverse")
-#install.packages("testthat")
-#install.packages("arrow")
-#install.packages("here")
 
 # Load necessary libraries
 library(tidyverse)

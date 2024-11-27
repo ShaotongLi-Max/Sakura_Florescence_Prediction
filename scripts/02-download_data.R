@@ -8,8 +8,6 @@
 # Any other information needed? None
 
 #### Workspace setup ####
-install.packages("tidyverse")
-install.packages("readr")
 library(tidyverse)
 library(readr)
 

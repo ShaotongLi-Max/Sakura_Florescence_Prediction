@@ -8,10 +8,7 @@
 # Any other information needed? None
 
 #### Workspace setup ####
-install.packages("tidyverse")
-install.packages("lubridate")
-install.packages("arrow")
-# Load necessary libraries
+
 library(tidyverse)
 library(lubridate)
 library(arrow)

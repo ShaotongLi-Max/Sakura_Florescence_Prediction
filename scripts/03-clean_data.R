@@ -9,13 +9,6 @@
 # Any other information needed? None
 
 #### Workspace setup ####
-# install necessary package
-install.packages("tidyr")
-install.packages("dplyr")
-install.packages("readr")
-install.packages("lubridate")
-install.packages("arrow")
-install.packages("caTools")
 # Load necessary package
 library(tidyr)
 library(dplyr)

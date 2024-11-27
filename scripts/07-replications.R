@@ -7,7 +7,6 @@
 # Pre-requisites: Requires all provided scripts and necessary data files
 # Any other information needed? None
 
-install.packages("tidyverse")
 library(tidyverse)
 
 # 1. Simulate Data

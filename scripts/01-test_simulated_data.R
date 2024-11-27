@@ -8,10 +8,6 @@
 # Any other information needed? None
 
 #### Workspace setup ####
-# Install required packages
-#install.packages("tidyverse")
-#install.packages("testthat")
-#install.packages("arrow")
 
 # Load necessary libraries
 library(testthat)
@@ -90,9 +86,6 @@ test_that("There are no missing values in simulated datasets", {
               info = "Missing values found in simulated_temp")
 })
 
-cat("All tests completed.\n")
-
-
 #### Test 4: Validate unique constraints ####
 test_that("Simulated latitude_time dataset has unique flower dates", {
   expect_equal(nrow(simulated_latitude_time), nrow(distinct(simulated_latitude_time, flower_date)),
@@ -159,4 +152,4 @@ test_that("Temperature values in temp dataset are approximately uniformly distri
               info = "Temperature values are not uniformly distributed in simulated_temp")
 })
 
-cat("All additional tests completed.\n")
+cat("All tests completed.\n")

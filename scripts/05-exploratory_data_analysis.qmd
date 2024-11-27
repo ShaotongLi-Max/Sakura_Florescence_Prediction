@@ -7,7 +7,7 @@ editor: visual
 
 # Preamble
 
-#### Purpose: Explore the analysis data
+#### Purpose: Explore the cleaned data
 
 #### Author: Shaotong Li
 
@@ -17,26 +17,12 @@ editor: visual
 
 #### License: MIT
 
-#### Pre-requisites: analysis data generated in 02-analysis_data
+#### Pre-requisites: analysis data generated in 03-cleaned_data
 
 #### Any other information needed? None
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #### Workspace setup ####
-
-#Install necessary packages
-install.packages("tidyverse")
-install.packages("arrow")
-install.packages("here")
-install.packages("ggplot2")
-install.packages("patchwork")
-install.packages("tidyverse")
-install.packages("sf")
-install.packages("rnaturalearth")
-install.packages("rnaturalearthdata")
-install.packages("ggthemes")
-install.packages("dplyr")
-install.packages("knitr")
 
 # Load libraries
 library(tidyverse)

@@ -8,9 +8,6 @@
 # Any other information needed? None
 
 #### Workspace setup ####
-#install necessary libraries
-install.packages("tidyverse")
-install.packages("arrow")
 # Load necessary libraries
 library(tidyverse)
 library(arrow)
