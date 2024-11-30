@@ -6,10 +6,9 @@ author:
 thanks: "Code and data are available at: [Sakura_Florescence_Prediction](https://github.com/ShaotongLi-Max/Sakura_Florescence_Prediction.git)."
 date: 2024/11/17
 date-format: long
-abstract: "This study uses a dual-model approach to predict cherry bloom duration in Japan. The first model predicts bloom duration using temperature, while the second estimates temperature based on latitude, month, and date of blossom. Analysis of historical and modern data shows that time, geographic and temporal factors significantly influence bloom duration through their impact on temperature, highlighting the importance of understanding these relationships for ecological conservation and cultural events."
+abstract: "This study uses a dual-linear-model approach to predict cherry bloom duration in Japan. The first model predicts bloom duration using temperature, while the second estimates temperature based on latitude, month, and date of blossom. The findings confirm that rising temperatures lead to earlier bloom periods while latitude and seasonal timing significantly shape temperature dynamics, highlighting the importance of understanding these relationships for ecological conservation, cultural event planning and the broader impacts of climate change on phenological events."
 format: pdf
 number-sections: true
-toc: true
 bibliography: references.bib
 ---
 ```{r}
@@ -18,20 +17,7 @@ bibliography: references.bib
 #| message: false
 #| echo: false
 
-# Install Packages
-install.packages("tidyverse")
-install.packages("arrow")
-install.packages("here")
-install.packages("ggplot2")
-install.packages("patchwork")
-install.packages("tidyverse")
-install.packages("sf")
-install.packages("rnaturalearth")
-install.packages("rnaturalearthdata")
-install.packages("ggthemes")
-install.packages("dplyr")
-install.packages("knitr")
-install.packages("kableExtra")
+# IMPORTANT: Please run 08-packages_install.R in scripts folder first.
 # Load libraries
 library(tidyverse)
 library(arrow)
@@ -62,26 +48,27 @@ model2 <- readRDS(here::here("models/model2.rds"))
 
 # Introduction
 
-Cherry blossoms, or sakura, are a powerful symbol of Japan, representing both the fleeting beauty of nature and a cherished cultural heritage [@Wikipedia2024]. Each spring, the blooming of cherry blossoms is celebrated across the country, marking a time of renewal and festivity [@Wikipedia2024]. However, the timing and duration of these blooms are highly sensitive to climatic conditions, which makes predicting sakura florescence increasingly important in the face of climate change [@Ocko2024]. Understanding how environmental factors, such as temperature, latitude, and seasonal timing, influence bloom duration can help forecast these events and provide intuition
- into broader ecological changes [@Ocko2024].
+Cherry blossoms, or sakura, are a powerful symbol of Japan, representing both the fleeting beauty of nature and a cherished cultural heritage [@Wikipedia2024]. Each spring, the blooming of cherry blossoms is celebrated across the country, marking a time of renewal and festivity [@Wikipedia2024]. However, the timing and duration of these blooms are highly sensitive to climatic conditions, which makes predicting sakura florescence increasingly important in the face of climate change [@Ocko2024]. Understanding how environmental factors, such as temperature, latitude, and seasonal timing, influence bloom duration can help forecast these events and provide intuition into broader ecological changes [@Ocko2024].
 
-This paper aims to address the challenge of predicting cherry bloom duration using a dual-model approach, with the estimand being the predicted duration of cherry blossom (sakura florescence) and the predicted temperature within Japan. Specifically, the first model predicts bloom duration based on temperature, while the second model estimates temperature as a function of latitude, month, and date. This approach aims to fill the gap in understanding the complex interactions between time, geographic and temporal factors factors that influence bloom dynamics, particularly how these factors drive temperature changes that, in turn, affect bloom duration.
+Existing research has demonstrated the relationship between temperature and bloom timing, but many studies focus on specific regions or lack consideration of geographic and temporal variability. In this paper, both historical and modern phenological data of different places in Japan are utilized into a dual-model framework that predicts bloom duration based on temperature and estimates temperature using geographic and temporal variables. Specifically, the first model predicts bloom duration based on temperature, while the second model estimates temperature as a function of latitude, month, and date.
 
-We utilized both historical and modern phenological data to ensure the robustness of our predictions. Our analysis highlights how latitude and seasonal factors contribute to temperature variation, which in turn affects the timing and duration of the bloom. The results demonstrate the potential for these models to improve the accuracy of bloom forecasts, particularly in the context of changing climatic patterns. This research contributes substantial knowledge to the fields of phenology and climate science, and provides practical implications for tourism, cultural events, and ecological conservation in Japan.
+The objectives of this study are to: (1) predict the duration of cherry blossom blooms based on temperature, (2) model temperature as a function of latitude, month, and day, and (3) assess how these factors interact to influence bloom timing and duration across Japan. By focusing on these aims, the study seeks to improve predictions of cherry blossom blooms while providing a clearer understanding of the complex interactions between time, geographic and temporal factors factors that influence bloom dynamics, particularly how these factors drive temperature changes that, in turn, affect bloom duration.
+
+This research contributes to the fields of phenology and climate science by the dual-model approach that supports planning for cultural and tourism events, informs conservation strategies, and enhances understanding of the broader impacts of climate change on phenological events across Japan. By examining how geographic and temporal factors influence temperature and, in turn, bloom dynamics, this study highlights the potential ripple effects of shifting seasonal patterns on ecosystems, biodiversity, and human activities reliant on predictable biological events.
 
 The remainder of this paper is structured as follows: @sec-data discusses the data sources and preprocessing methods. @sec-model details the dual-model approach, including the temperature estimation and bloom prediction models. @sec-result presents the results, followed by a discussion in @sec-discussion on the implications of our findings. Finally, @sec-appendix concludes with intuitions into future research directions and the broader impact of climate change on cherry blossoms.
 
 # Data {#sec-data}
 
-In this project, we used data from the 'Sakura Flowering' branch of the dataset created by tacookson [@tacooksonSakuraFlowering]. This dataset provided cherry bloom and temperature records essential for our analysis. Notably, we did not use the full bloom data included in the dataset, as our focus is on the complete florescence period, specifically the bloom duration.
+In this project, we used data from the 'Sakura Flowering' branch of the dataset created by tacookson [@tacooksonSakuraFlowering]. This dataset provided cherry bloom and temperature records essential for our analysis. Notably, we did not use the full bloom data included in the dataset, as our focus is on the complete florescence period, specifically the bloom duration.We also used Rohan Alexander's GitHub starter folder [@Alexander2024] as the foundation for our paper and made minor modifications to tailor it to the specific needs of our study.
 
-In this project, we used R[@citeR] and several R packages for data processing, analysis, and visualization. Specifically, tidyverse [@tidyverse], arrow[@arrow], here[@here], ggplot2[@ggplot2], patchwork[@patchwork], sf[@sf], rnaturalearth[@rnaturalearth], and rnaturalearthdata[@rnaturalearthdata] were used for data processing, geospatial analysis, and visualization. ggthemes[@ggthemes] was utilized to apply thematic elements to plots, while dplyr[@dplyr] was key for data manipulation tasks. For dynamic report generation, knitr[@knitr] and kableExtra[@kableExtra] were used, providing enhanced formatting for outputs. Together, these packages enabled efficient data cleaning, analysis, and visualization throughout the study.
+In this project, we used R[@citeR] and a variety of R packages for data processing, analysis, and visualization. Specifically, tidyverse[@tidyverse], lubridate[@lubridate], arrow[@arrow], tidyr[@tidyr], dplyr[@dplyr], and readr[@readr] were used for data manipulation and cleaning. caTools[@caTools] supported data splitting, while testthat[@testthat] facilitated testing of scripts. For geospatial analysis and visualization, sf[@sf], rnaturalearth[@rnaturalearth], and rnaturalearthdata[@rnaturalearthdata] were employed, along with ggplot2[@ggplot2], patchwork[@patchwork], and ggthemes[@ggthemes] for creating and enhancing visualizations. The here[@here] package streamlined file path management. For dynamic report generation, knitr[@knitr] and kableExtra[@kableExtra] were used, allowing for well-structured and formatted outputs. Together, these packages provided a toolkit for data preparation, analysis, and visualization throughout the study.
 
 ## Overview
 
 The data utilized in this study comprises three primary datasets: historical cherry blossom bloom records, modern bloom records, and temperature data. The historical dataset encompasses records of cherry blossom bloom dates spanning several decades in the Kyoto region, offering a long-term perspective on bloom trends in this specific area of Japan. The modern dataset contains recent bloom records from various regions across Japan, capturing current climatic conditions and bloom dynamics. Lastly, the temperature dataset includes temperature readings for various locations across Japan, which are essential for assessing temperature-related effects on bloom duration.
 
-To prepare these datasets for analysis, several data cleaning steps were undertaken. For the historical dataset, the predicted and actual temperature estimates were consolidated into a single "temperature" variable, with the actual temperature given the highest priority. The modern dataset underwent similar steps, where modern bloom records and temperature data were merged based on corresponding time and regional information. A new variable, "mean temperature per month," was created to represent the average temperature in each region during the bloom month. Additionally, incomplete entries were removed, and irrelevant attributes were filtered out from the two cleaned datasets.
+To prepare these datasets for analysis, several data cleaning steps were undertaken. For the historical dataset, the predicted and actual temperature estimates were consolidated into a single "temperature" variable, with the actual temperature given the highest priority. The modern dataset underwent similar steps, where modern bloom records and temperature data were merged based on corresponding time and regional information. A new variable, "mean temperature per month," was created to represent the average temperature in each region during the bloom month. Additionally, incomplete entries were removed, and irrelevant attributes were filtered out from the two cleaned datasets.For variables with NA values, we remove the entire row of data to ensure the reliability of the analysis.
 
 Two cleaned datasets were created to facilitate the study of relationships between various factors. The analysis dataset was further refined by selecting relevant variables and splitting it into training and testing subsets, with 70% used for training and 30% for testing, to support the development of Model 1 and Model 2. Notably, the "full bloom" data was excluded from this study, as it was irrelevant to our research focus on the complete florescence period, specifically the bloom duration.
 
@@ -92,7 +79,7 @@ By integrating both historical and modern data, our analysis captures both long-
 
 The transformation of real-world phenomena into dataset entries begins with understanding the cherry blossom bloom dynamics. According to a recent BBC article [@BBC2024], climate change has significantly impacted cherry blossom blooming in Japan, with rising temperatures leading to earlier blooming times. Warmer winters and earlier springs are causing the iconic cherry blossoms to bloom weeks earlier than usual, which has disrupted traditional cultural events that celebrate this natural phenomenon [@BBC2024]. This link between rising temperatures and earlier bloom periods illustrates the sensitivity of cherry blossoms to temperature fluctuations, underscoring the role of climate change as a important factor influencing bloom dynamics. 
 
-From these historical and modern records, we derived several key environmental factors that may influence the florescence period, including temperature, latitude, and the timing of the year. These factors were selected based on their potential impact on bloom dynamics, as discussed in related studies [@BBC2024]. Temperature plays an important role, as evidenced by documented earlier blooming trends in response to rising temperatures attributed to climate change [@BBC2024]. By considering both historical temperature reconstruction and modern observational data, we aimed to develop an understanding of how these variables impact the bloom duration.
+From these historical and modern records, we derived several key environmental factors that may influence the florescence period, including temperature, latitude, and the timing, especially in late winter and early spring. These factors were selected based on their potential impact on bloom dynamics, as discussed in related studies [@BBC2024]. Temperature plays an important role, as evidenced by documented earlier blooming trends in response to rising temperatures attributed to climate change [@BBC2024]. By considering both historical temperature reconstruction and modern observational data, we aimed to develop an understanding of how these variables impact the bloom duration.
 
 The cleaned dataset enabled us to analyze the interactions between bloom dates and climate factors in a structured manner. Each entry in the dataset represents the transformation of raw observations into analyzable data points—quantifying environmental influences such as average monthly temperature and geographic location. This structured data allowed us to systematically assess the relationships between variables and draw intuitions about the key factors affecting cherry blossom phenology, ultimately enhancing our predictive models of bloom duration.
 
@@ -215,7 +202,6 @@ scatter_plot_no_line <- ggplot(scatter_data, aes(x = temp, y = flower_doy)) +
   geom_point(aes(color = year), alpha = 0.6, size = 2) +  # Scatter points colored by year
   scale_color_viridis_c(option = "C", name = "Year") +  # Color scale for year
   labs(
-    subtitle = "Color represents temporal progression",
     x = "Temperature (°C)",
     y = "Flowering Day (DOY)"
   ) +
@@ -289,7 +275,6 @@ latitude_temp_plot <- ggplot(latitude_temp_data, aes(x = latitude, y = mean_temp
     size = 1
   ) +  # Add a dashed line for the linear relationship
   labs(
-    subtitle = "Relationship with Linear Trend",
     x = "Latitude",
     y = "Mean Temperature (°C)"
   ) +
@@ -337,7 +322,6 @@ gis_plot_temp <- ggplot(data = japan_map) +
   ) +
   theme_minimal() +
   labs(
-    subtitle = "Warmer colors indicate higher temperatures",
     x = "Longitude",
     y = "Latitude"
   ) +
@@ -489,7 +473,6 @@ gis_plot <- ggplot(data = japan_map) +
   ) +
   theme_minimal() +
   labs(
-    subtitle = "Darker points indicate later flowering dates",
     x = "Longitude",
     y = "Latitude"
   ) +
@@ -544,9 +527,6 @@ line_plot <- ggplot() +
 
 # Display the plot
 print(line_plot)
-
-
-
 ```
 
 @fig-year depicts the temperature trend over several centuries, highlighting the distribution of temperatures across different years. The orange dashed line represents the average temperature of each century, providing a baseline for comparison. The plot shows considerable variation in temperatures from year to year, with no consistent linear trend. This lack of a clear relationship between temperature and year suggests that, over the long term, temperature fluctuations have been influenced by a complex interplay of factors beyond a simple time progression.
@@ -627,6 +607,10 @@ In summary, while longitude does show some relationship with temperature, it is 
 
 # Model {#sec-model}
 
+We chose to use linear models for both models. Linear models provide a clear structure that makes it easier to interpret the relationships between variables, and they are computationally efficient, allowing for quick predictions. They are also suitable in this study for capturing the basic relationships between temperature and bloom timing, as well as the influence of geographic and temporal factors on temperature, all of which have been shown in previous research to exhibit linear trends. While more complex nonlinear models might explain additional residuals, they tend to sacrifice interpretability and practicality, which could be detrimental for research that aims to balance theoretical understanding with real-world application.
+
+Regarding variable selection, we chose variables based on their established significance in the literature and the availability of data. Temperature, latitude, month, and day were selected as key predictors, while we excluded variables like year, which showed minimal contribution to the predictions. Specifically, the alternative model demonstrates that latitude has a significant and consistent effect on temperature, whereas longitude had a weaker and less significant impact. By excluding variables with low relevance to the outcome, we simplified the model, improving its efficiency and reliability, while avoiding unnecessary complexity that could hinder the interpretation of results.
+
 ## Alternative Model 
 
 ```{=tex}
@@ -696,7 +680,7 @@ kable(
 
 ```
 
-@tbl-am provides the summary of the alternative model, which includes estimates and p-values for both latitude and longitude. The results indicate that latitude has a strong and statistically significant relationship with temperature, whereas longitude does not ($p\text{-value} = 0.806$). This finding suggests that latitude is the predominant predictor, which aligns with the analysis in @sec-data that showed a stronger correlation between latitude and temperature compared to longitude.
+@tbl-am provides the summary of the alternative model, which includes estimates and p-values for both latitude and longitude. The results indicate that latitude has a strong and statistically significant relationship with temperature, whereas longitude does not ($p-value = 0.806$ and $estimates = -0.003$). This finding suggests that latitude is the predominant predictor, which aligns with the analysis in @sec-data that showed a stronger correlation between latitude and temperature compared to longitude.
 
 Given these findings, incorporating longitude into the model did not substantially enhance the temperature estimation, and thus it was excluded from the final temperature estimation model (Model 2). The decision to exclude longitude was based on the statistical insignificance and the simplicity of maintaining an interpretable model without sacrificing accuracy.
 
@@ -754,11 +738,18 @@ This model aims to address the complexity of temperature dynamics by accounting 
 
 ## Model Validation
 
-The models developed in this study are based on several underlying assumptions. For Model 1, the primary assumption is the linear relationship between temperature and bloom timing, implying that changes in temperature directly translate to proportional changes in bloom dates. Model 2 assumes that latitude, day, and month together provide an adequate representation of the temperature dynamics, and that temperature can be modeled linearly with these predictors.
+There are potential limitations to our model, including the exclusion of other climatic factors such as precipitation, humidity, and soil moisture, potentially influencing bloom timing. Additionally, the models do not account for microclimatic effects or local geographical features such as urban heat islands, which might introduce variability not captured by latitude and temperature alone.
 
-Potential limitations include the exclusion of other climatic factors such as precipitation, humidity, and soil moisture, which may also influence bloom timing. Additionally, the models do not account for microclimatic effects or local geographical features such as urban heat islands, which might introduce variability not captured by latitude and temperature alone.
+Therefore, to validate the models to see whether the results are largely affected by unknow variables, we split the cleaned data into training and testing sets using a 70-30 ratio.Then, we assess the performance of the models using various diagnostic tools and statistical metrics.Specifically, we include the actual vs. fitted values plot to evaluate how well the predicted values align with the observed data. A strong alignment in this plot indicates high predictive accuracy and suggests that the model captures the underlying trends in the data effectively.
 
-To validate the models, we split the cleaned data into training and testing sets using a 70-30 ratio. Root Mean Square Error (RMSE) was used to evaluate the accuracy of predictions. Model 1 was validated through comparison of predicted versus actual flowering dates, showing a strong correlation and a low RMSE, which confirms temperature's significant role in bloom timing. Model 2 was validated by comparing estimated versus actual temperatures, with the model demonstrating reasonable accuracy despite the complexity introduced by geographic and temporal factors.The results of our modeling efforts are summarized in @fig-validation-1 and @fig-validation-2, which illustrate the predictive performance of Model 1 and Model 2, respectively.
+We also use the Q-Q residual plot to assess whether the residuals follow a normal distribution. This helps validate one of the key assumptions of the models, ensuring that the variability and spread of the residuals are appropriate for statistical inference and prediction.
+
+Additionally, we rely on metrics such as RMSE, R-squared, adjusted R-squared, F-statistics, and p-values to quantitatively measure the accuracy and reliability of each model. These metrics provide understanding of the overall fit, predictive power, and statistical significance of the predictors.
+
+Together, these visual and numerical tools offer an evaluation of model performance and help ensure that the models are robust and suitable for the intended analyses.
+
+
+### Model 1 Validation
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.pos="H"}
 #| label: fig-validation-1
@@ -796,11 +787,37 @@ plot_model1 <- ggplot(temp_test_data, aes(x = flower_doy, y = predicted_flower_d
 print(plot_model1)
 ```
 
-@fig-validation-1 depicts the actual versus predicted flowering day of the year (DOY) for cherry blossoms using Model 1. The points are closely aligned along the dashed orange line, indicating that the model predictions are highly accurate. The strong linear relationship observed suggests that temperature is an effective predictor of bloom timing, validating our choice of using temperature as the sole predictor in Model 1.The RMSE, R-squared, adjusted R-squared, F-statistics and overall P-value of model 1 are listed below in @tbl-model1-RMSE. Model 1 exhibited a low RMSE, indicating strong performance in predicting bloom dates based on temperature. Full summary table is in @sec-appendix.
+@fig-validation-1 depicts the actual versus predicted flowering day of the year (DOY) for cherry blossoms using Model 1. The points are closely aligned along the dashed orange line, indicating that the model predictions are highly accurate. 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.pos="H"}
+#| label: fig-residual-1
+#| fig-cap: "Model 1: QQ Plot of Residuals"
+
+residuals_model1 <- residuals(model1)
+
+qq_data_1 <- data.frame(
+  theoretical_quantiles = qqnorm(residuals_model1, plot.it = FALSE)$x,
+  sample_quantiles = qqnorm(residuals_model1, plot.it = FALSE)$y
+)
+
+qq_plot_1 <- ggplot(qq_data_1, aes(x = theoretical_quantiles, y = sample_quantiles)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  geom_abline(slope = 0.1, intercept = 0, color = "darkorange", linetype = "dashed") +
+  labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles",
+  ) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(-2, 2), ylim = c(-1, 1)) 
+
+print(qq_plot_1)
+```
+
+@fig-residual-1 depicts the Q-Q residual plot of model 1. The orange line represents a residual slope of $0.1$, indicating that the spread of the residuals is much narrower compared to the theoretical normal distribution which means the residuals have a smaller variance than a standard normal distribution.However, this doesn't interfere the accuracy of our model.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #| label: tbl-model1-RMSE
-#| tbl-cap: "RMSE for Model 1"
+#| tbl-cap: "Model 1: Regression Diagnostics"
 # Create a data frame for model summary
 
 # Calculate p-value for the F-statistic dynamically
@@ -837,6 +854,10 @@ kable(
 
 ```
 
+The strong linear relationship observed suggests that temperature is an effective predictor of bloom timing, validating our choice of using temperature as the sole predictor in Model 1.The RMSE, R-squared, adjusted R-squared, F-statistics and overall P-value of model 1 are listed above in @tbl-model1-RMSE. Model 1 exhibited a low RMSE, high adjusted R-suqared and low overall p-value, indicating strong performance in predicting bloom dates based on temperature. Full summary table is in @sec-appendix.
+
+### Model 2 Validation
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.pos="H"}
 #| label: fig-validation-2
 #| fig-cap: "Model 2: Actual vs Predicted Temperature"
@@ -858,11 +879,37 @@ plot_model2 <- ggplot(latitude_time_test_data, aes(x = mean_temp_month, y = pred
 print(plot_model2)
 ```
 
-@fig-validation-2 illustrates the actual versus predicted mean temperature values for Model 2.While there is more variability compared to Model 1，the overall trend aligns well with the dashed orange line, indicating reasonable predictive performance. This can be attributed to the increased complexity of the model and the influence of multiple interacting factors, such as day, latitude, and month, which contribute to temperature variations. Nonetheless, the model performs well in capturing the overall pattern of temperature change.The RMSE, R-squared, adjusted R-squared, F-statistics and overall P-value of model 2 are listed below in @tbl-model2-RMSE. Model 2 also demonstrated reasonable accuracy in estimating mean temperatures, though some variability was observed due to the inclusion of multiple interacting factors such as latitude and seasonal changes. Full summary table is in @sec-appendix.
+@fig-validation-2 illustrates the actual versus predicted mean temperature values for Model 2.While there is more variability compared to Model 1，the overall trend aligns well with the dashed orange line, indicating reasonable predictive performance. This can be attributed to the increased complexity of the model and the influence of multiple interacting factors, such as day, latitude, and month, which contribute to temperature variations.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.pos="H"}
+#| label: fig-residual-2
+#| fig-cap: "Model 2: QQ Plot of Residuals"
+
+residuals_model2 <- residuals(model2)
+
+qq_data_2 <- data.frame(
+  theoretical_quantiles = qqnorm(residuals_model2, plot.it = FALSE)$x,
+  sample_quantiles = qqnorm(residuals_model2, plot.it = FALSE)$y
+)
+
+qq_plot_2 <- ggplot(qq_data_2, aes(x = theoretical_quantiles, y = sample_quantiles)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  geom_abline(slope = 1, intercept = 0, color = "darkorange", linetype = "dashed") +
+  labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(-2, 2), ylim = c(-2, 2)) 
+
+print(qq_plot_2)
+```
+
+@fig-residual-2 depicts the Q-Q residual plot of model 2. The orange line represents a residual slope of $1$, indicating that that the variability of the residuals matches that of a standard normal distribution, which is a desirable property.The model adequately captures the underlying relationships in the data and the residual variance reflects the inherent variability in the data without being artificially compressed or inflated.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #| label: tbl-model2-RMSE
-#| tbl-cap: "RMSE for Model 2"
+#| tbl-cap: "Model 2: Regression Diagnostics"
 
 # Calculate p-value for the F-statistic dynamically
 f_stat_2 <- summary(model2)$fstatistic
@@ -897,6 +944,10 @@ kable(
   kable_styling(latex_options = c("striped", "hold_position"))
 
 ```
+
+Nonetheless, the model performs well in capturing the overall pattern of temperature change.The RMSE, R-squared, adjusted R-squared, F-statistics and overall P-value of model 2 are listed above in @tbl-model2-RMSE. Model 2 also demonstrated reasonable accuracy in estimating mean temperatures,with a low RMSE, high adjusted R-suqared and low overall p-value. Full summary table is in @sec-appendix.
+
+### Validation Conclusion
 
 In conclusion, both models show strong predictive capabilities. The results demonstrate the utility of the dual-model approach in enhancing our understanding of the factors driving cherry blossom bloom duration, particularly in the context of climate variability and change.The simplicity of Model 1 and the more subtle complexity of Model 2 offer complementary intuitions into the determinants of cherry blossom bloom duration. Model 1 provides a clear understanding of temperature's direct influence, while Model 2 enhances this by incorporating additional geographic and temporal variables, thereby improving the accuracy of bloom forecasts in the context of changing climatic conditions.
 
@@ -1003,7 +1054,7 @@ kable(
 
 In conclusion, both models provide substantial intuitions into the factors influencing cherry blossom bloom duration. Model 1 effectively captures the direct impact of temperature on bloom timing, while Model 2 incorporates geographic and temporal variables to estimate temperature. The dual-model approach offers an understanding of the climatic and geographic determinants of cherry blossom phenology, contributing to our broader understanding of the effects of climate variability on natural events.
 
-## Example of Prediction
+## Practical Applications
 
 To provide a practical example of how our models perform, we selected a specific data point from the raw dataset representing the city of Esashi in 1969. The data for this location included all relevant attributes needed for the models, such as latitude, day, month, and mean temperature. Using these values, we predicted the mean temperature and flowering day of the year (DOY), then compared the predicted values to the actual historical data.
 
@@ -1065,25 +1116,33 @@ comparison %>%
 
 @tbl-eop presents the information of selected data point as well as the actual versus predicted values for mean temperature and flowering DOY. The results show that the predicted mean temperature is $4.25°C$, compared to the actual value of $3.9°C$. For flowering DOY, the model predicted a value around $111$ days, while the actual recorded value was $119$ days. This example demonstrates that our models are highly accurate in predicting both temperature and bloom timing, effectively capturing the relationship between environmental factors and cherry blossom florescence.This prediction example highlights the practical application of the models developed in this study and their potential to provide meaningful intuitions into the timing and conditions of cherry blossom blooms in Japan.
 
+By combining Model 1, which estimates bloom timing based on temperature, with Model 2, which predicts temperature using latitude, day, and month, this framework effectively captures the interplay between environmental and geographic factors in bloom prediction. These predictions can aid in organizing cultural events and managing tourism centered around cherry blossoms, while also serving as a foundation for ecological research and conservation planning. Furthermore, the models can be applied to study how climate change may influence seasonal events, offering information to researchers and policymakers as they address potential shifts in timing and their broader implications.
+
 # Discussion {#sec-discussion}
 
-## Limitation
+## Achievements of This Study
 
-Despite the promising results of our models, several limitations must be acknowledged. First, the models rely heavily on the availability and accuracy of historical and modern phenological data. Data gaps, inconsistencies, or inaccuracies could adversely affect model performance, particularly for predictions in regions or timeframes where data is sparse. The data used in this study may still have gaps or biases that could limit the generalizability of our results. Further improvements in data collection could help mitigate these issues and strengthen future modeling efforts.
+This study presented a dual-model framework to forecast the blooming duration of cherry blossoms (sakura) in Japan. The first model established a predictive relationship between temperature and bloom duration, while the second model estimated temperature based on geographic and temporal factors, such as latitude, day, and month. By leveraging historical and modern datasets, the study provided a robust method for understanding how environmental variables influence bloom dynamics. The findings offer practical applications for managing cultural events, ecological conservation, and planning in the context of climate variability.
 
-Second, while temperature was found to be a strong predictor of bloom timing, it is not the only environmental factor influencing cherry blossom florescence. Other climatic and ecological variables, such as precipitation, soil moisture, and light exposure, could also play significant roles but were not included in our models due to data limitations. The exclusion of these factors limits the comprehensiveness of the current models and highlights the need for more detailed environmental data to enhance the robustness of predictions.
-
-Additionally, Model 2’s prediction results showed some deviations, as seen in @fig-validation-2. This suggests that there may be other factors, such as regional or geographic influences, impacting our temperature predictions. These factors could include microclimates, urban heat islands, or variations in local geography, which were not captured in our model. Addressing these additional influences could enhance the model’s accuracy in future iterations. Moreover, the linear assumptions in our models may not fully capture the complex interactions among variables, and future versions of the model could benefit from incorporating non-linear modeling techniques or machine learning approaches.
-
-## Interpretation and Future Research Directions
+## Environmental and Phenological Dynamics
 
 The findings from this study provide substantial intuitions into the factors that influence cherry blossom bloom timing in Japan. One key takeaway is the strong relationship between temperature and bloom duration, confirming the important role of climatic conditions in determining the timing of sakura florescence. This information is particularly relevant in the context of climate change, as rising temperatures could lead to earlier and potentially shorter bloom periods, impacting both cultural and ecological aspects of cherry blossom events. The implications extend to tourism, agriculture, and ecological conservation, as shifting bloom timings could affect local economies and biodiversity.
 
 Another important finding is the relative importance of geographic factors, such as latitude, in determining local temperatures. Our results suggest that latitude plays a more significant role than longitude in temperature estimation, leading us to exclude longitude from the final model. This decision reflects a balance between model complexity and predictive accuracy, ensuring that the model remains interpretable while retaining its predictive power. It also underscores the importance of simplifying models without sacrificing key predictive capabilities, which can be especially useful in practical applications such as ecological forecasting.
 
+## Limitation
+
+Despite the promising results of our models, several limitations must be acknowledged. First, the first model relies heavily on the availability and accuracy of historical phenological data. However, the historical data predominantly originates from the Kyoto region, which may limit its generalizability to other areas in Japan. While the results show no significant decrease in prediction accuracy when applied to broader datasets, regional variations in climate and geography may introduce potential biases when the model is used in locations with different environmental conditions.
+
+Temperature was identified as a strong predictor of bloom timing, but it is not the sole factor influencing cherry blossom florescence. Other variables, such as precipitation, soil moisture, light exposure, and regional influences like microclimates or urban heat islands, may also play important roles but were not included due to data limitations. These omissions reduce the models' universality and may contribute to the deviations observed in Model 2’s predictions.
+
+Additionally, the reliance on linear assumptions may oversimplify the complex interactions among these factors, as seen in @fig-validation-2. Future model improvements should incorporate additional environmental variables, account for regional influences, and explore non-linear or machine learning approaches to enhance accuracy and robustness.
+
+## Future Research Directions
+
 Future research should explore additional environmental variables that may affect bloom timing, such as soil moisture, precipitation, and light availability. Incorporating these factors could improve model accuracy and provide an understanding of the factors driving sakura florescence. Furthermore, future studies could consider non-linear models or machine learning approaches to capture complex interactions between variables, potentially enhancing predictive capabilities. Machine learning models, for instance, could uncover hidden patterns and relationships in the data that are not easily captured by traditional linear approaches, offering deeper intuitions into the dynamics of cherry blossom blooming.
 
-Finally, it would be beneficial to extend the scope of the analysis beyond Japan to examine cherry blossom bloom patterns in other regions, such as South Korea or China. By comparing bloom dynamics across different climates and geographies, we could gain a deeper understanding of the global factors affecting cherry blossom phenology and assess the broader implications of climate change on these iconic events. Such comparative studies could disclose how different environmental and cultural contexts modulate the response of cherry blossoms to climatic changes, thereby contributing to a more global understanding of phenological shifts.
+It would be beneficial to extend the scope of the analysis beyond Japan to examine cherry blossom bloom patterns in other regions, such as South Korea or China. By comparing bloom dynamics across different climates and geographies, we could gain a deeper understanding of the global factors affecting cherry blossom phenology and assess the broader implications of climate change on these iconic events. Such comparative studies could disclose how different environmental and cultural contexts modulate the response of cherry blossoms to climatic changes, thereby contributing to a more global understanding of phenological shifts.
 
 # Appendix {#sec-appendix}
 
@@ -1183,6 +1242,10 @@ To provide an understanding of local environmental factors impacting cherry blos
     - Yes (please specify)
     - No
     - Not sure
+
+## Incorporating Survey Findings
+
+Integrating the survey findings into the discussion of cherry blossom bloom dynamics enhances the understanding of how local perceptions and environmental conditions influence cherry blossom blooming. The survey would capture personal observations of bloom timing, temperature changes, and unusual climate events, helping to refine predictions and account for local variations not represented by environmental data alone. By combining both quantitative and qualitative data, the survey would provide a clearer view of how climatic changes, such as temperature shifts and extreme weather events, are affecting sakura blooms in different regions. These findings would support more accurate forecasts and improve conservation and event planning efforts.
 
 ## Model Details
 
