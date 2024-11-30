@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Sakura Florescence Prediction project aims to investigate and model the factors influencing the blooming dates of cherry blossoms across Japan. By integrating historical and modern data on temperature, location, and flowering dates, the project develops two predictive models to explore how climatic and geographical factors interact with floral phenology.
+The Sakura Florescence Prediction project aims to investigate and model the factors influencing the blooming dates of cherry blossoms across Japan. By integrating historical and modern data on temperature, location, and flowering dates, the project develops two predictive models to explore how climatic and geographical factors interact with floral phenology.The data used in this project spans a wide range of sources, including simulated, raw, cleaned, and processed data, providing a comprehensive foundation for predictive modeling of sakura bloom dynamics.
 
 ## Project Structure
 
